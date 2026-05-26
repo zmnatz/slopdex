@@ -52,11 +52,43 @@
         }
 
         #search-bar { padding: 20px; background: var(--pokedex-red); }
+        .toolbar {
+            display: flex; flex-direction: column; gap: 10px;
+            padding: 0 20px 20px 20px; background: var(--pokedex-red);
+        }
         #search-input {
             width: 100%; padding: 14px; border-radius: 12px;
             border: none; font-size: 16px; outline: none;
             box-shadow: inset 2px 2px 5px rgba(0,0,0,0.3);
         }
+        .filter-group {
+            display: flex; gap: 10px;
+        }
+        .filter-select {
+            flex: 1; padding: 10px; border-radius: 8px;
+            border: none; background: white; font-size: 14px;
+            outline: none; cursor: pointer;
+        }
+        #pokemon-list {
+            flex: 1; overflow-y: auto; list-style: none;
+            margin: 0; padding: 0;
+        }
+        .gen-section {
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .gen-summary {
+            padding: 15px 20px; color: white; cursor: pointer;
+            font-weight: bold; font-size: 16px; text-transform: uppercase;
+            background: rgba(0,0,0,0.1); list-style: none;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .gen-summary::-webkit-details-marker { display: none; }
+        .gen-summary::after { content: '▾'; font-size: 12px; }
+        details[open] .gen-summary::after { content: '▴'; }
+        .gen-content {
+            list-style: none; margin: 0; padding: 0;
+        }
+
 
         #pokemon-list {
             flex: 1; overflow-y: auto; list-style: none;
@@ -212,7 +244,17 @@
             <div id="search-bar">
                 <input type="text" id="search-input" placeholder="Search all generations...">
             </div>
-            <ul id="pokemon-list"></ul>
+            <div class="toolbar">
+                <div class="filter-group">
+                    <select id="gen-filter" class="filter-select">
+                        <option value="all">All Generations</option>
+                    </select>
+                    <select id="type-filter" class="filter-select">
+                        <option value="all">All Types</option>
+                    </select>
+                </div>
+            </div>
+            <div id="pokemon-list"></div>
         </aside>
 
         <main id="details">
@@ -238,12 +280,27 @@
     <script>
         const pokemonListElement = document.getElementById('pokemon-list');
         const searchInput = document.getElementById('search-input');
+        const genFilter = document.getElementById('gen-filter');
+        const typeFilter = document.getElementById('type-filter');
         const detailCard = document.getElementById('detail-card');
         const placeholder = document.getElementById('placeholder');
         const loader = document.getElementById('loader');
         
+        const GEN_RANGES = [
+            { name: 'Generation I', start: 1, end: 151 },
+            { name: 'Generation II', start: 152, end: 251 },
+            { name: 'Generation III', start: 252, end: 386 },
+            { name: 'Generation IV', start: 387, end: 493 },
+            { name: 'Generation V', start: 494, end: 649 },
+            { name: 'Generation VI', start: 650, end: 721 },
+            { name: 'Generation VII', start: 722, end: 809 },
+            { name: 'Generation VIII', start: 810, end: 905 },
+            { name: 'Generation IX', start: 906, end: 1025 },
+        ];
+
         let allPokemon = [];
         let currentPokemonId = null;
+        let typeCache = {};
 
         async function fetchWithRetry(url, retries = 3, backoff = 300) {
             try {
@@ -267,25 +324,68 @@
 
         async function init() {
             try {
+                // Populate Generation Filter
+                GEN_RANGES.forEach(gen => {
+                    const opt = document.createElement('option');
+                    opt.value = gen.name;
+                    opt.textContent = gen.name;
+                    genFilter.appendChild(opt);
+                });
+
+                // Populate Type Filter
+                const typesData = await fetchWithRetry('https://pokeapi.co/api/v2/type');
+                typesData.results.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.name;
+                    opt.textContent = t.name.charAt(0).toUpperCase() + t.name.slice(1);
+                    typeFilter.appendChild(opt);
+                });
+
                 const data = await fetchWithRetry('https://pokeapi.co/api/v2/pokemon?limit=1025');
                 allPokemon = data.results;
                 renderList(allPokemon);
             } catch (e) {
-                pokemonListElement.innerHTML = `<li style="padding:20px; color:white;">Failed to load Pokédex.</li>`;
+                pokemonListElement.innerHTML = `<div style="padding:20px; color:white;">Failed to load Pokédex.</div>`;
             }
         }
-
+        
         function renderList(list) {
             pokemonListElement.innerHTML = '';
-            list.forEach(pokemon => {
-                const id = pokemon.url.split('/')[6];
-                const li = document.createElement('li');
-                li.className = 'pokemon-item';
-                li.innerHTML = `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy"><span>${pokemon.name}</span><span class="id-badge">#${id.padStart(4, '0')}</span>`;
-                li.onclick = () => selectPokemon(id, li);
-                pokemonListElement.appendChild(li);
+            
+            GEN_RANGES.forEach(gen => {
+                const genPokemon = list.filter(p => {
+                    const id = parseInt(p.url.split('/')[6]);
+                    return id >= gen.start && id <= gen.end;
+                });
+
+                if (genPokemon.length === 0) return;
+
+                const details = document.createElement('details');
+                details.className = 'gen-section';
+                details.open = true;
+                
+                const summary = document.createElement('summary');
+                summary.className = 'gen-summary';
+                summary.innerHTML = `<span>${gen.name}</span> <span style="font-size: 12px; opacity: 0.8;">${genPokemon.length}</span>`;
+                
+                const content = document.createElement('div');
+                content.className = 'gen-content';
+                
+                genPokemon.forEach(pokemon => {
+                    const id = pokemon.url.split('/')[6];
+                    const div = document.createElement('div');
+                    div.className = 'pokemon-item';
+                    div.innerHTML = `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy"><span>${pokemon.name}</span><span class="id-badge">#${id.padStart(4, '0')}</span>`;
+                    div.onclick = () => selectPokemon(id, div);
+                    content.appendChild(div);
+                });
+
+                details.appendChild(summary);
+                details.appendChild(content);
+                pokemonListElement.appendChild(details);
             });
         }
+
 
         async function selectPokemon(id, element) {
             document.querySelectorAll('.pokemon-item').forEach(item => item.classList.remove('active'));
@@ -384,10 +484,47 @@
             });
         }
 
-        searchInput.oninput = (e) => {
-            const term = e.target.value.toLowerCase();
-            renderList(allPokemon.filter(p => p.name.toLowerCase().includes(term)));
-        };
+        async function filterAndRender() {
+            const term = searchInput.value.toLowerCase();
+            const gen = genFilter.value;
+            const type = typeFilter.value;
+
+            let filtered = [...allPokemon];
+
+            if (term) {
+                filtered = filtered.filter(p => p.name.toLowerCase().includes(term));
+            }
+
+            if (gen !== 'all') {
+                const range = GEN_RANGES.find(r => r.name === gen);
+                if (range) {
+                    filtered = filtered.filter(p => {
+                        const id = parseInt(p.url.split('/')[6]);
+                        return id >= range.start && id <= range.end;
+                    });
+                }
+            }
+
+            if (type !== 'all') {
+                if (!typeCache[type]) {
+                    try {
+                        const typeData = await fetchWithRetry(`https://pokeapi.co/api/v2/type/${type}`);
+                        typeCache[type] = typeData.pokemon.map(p => p.pokemon);
+                    } catch (e) {
+                        console.error(`Failed to fetch type ${type}:`, e);
+                        typeCache[type] = [];
+                    }
+                }
+                const typeUrls = new Set(typeCache[type].map(p => p.url));
+                filtered = filtered.filter(p => typeUrls.has(p.url));
+            }
+
+            renderList(filtered);
+        }
+
+        searchInput.oninput = filterAndRender;
+        genFilter.onchange = filterAndRender;
+        typeFilter.onchange = filterAndRender;
 
         init();
     </script>
