@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Sidebar } from './components/Sidebar'
 import { DetailView } from './components/DetailView'
@@ -23,13 +23,6 @@ function AppContent() {
     loading,
     error: detailError,
   } = usePokemonDetail(selectedId)
-
-  useEffect(() => {
-    if (!pokeData?.cries?.latest) return
-    const audio = new Audio(pokeData.cries.latest)
-    audio.volume = 0.3
-    audio.play()
-  }, [pokeData])
 
   return (
     <div className="app">
