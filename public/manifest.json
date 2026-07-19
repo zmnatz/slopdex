@@ -1,0 +1,22 @@
+{
+  "name": "Pokédex",
+  "short_name": "Pokédex",
+  "description": "A Pokédex app for browsing Pokémon",
+  "display": "standalone",
+  "theme_color": "#dc0a2d",
+  "background_color": "#dc0a2d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
