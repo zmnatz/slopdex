@@ -8,11 +8,11 @@ import Grid from '@mui/material/Grid'
 import Paper from '@mui/material/Paper'
 import Button from '@mui/material/Button'
 import LinearProgress from '@mui/material/LinearProgress'
-import ButtonBase from '@mui/material/ButtonBase'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import type { PokemonData, SpeciesData, EvolutionStep } from '../utils/types'
 import { TYPE_COLORS } from '../utils/constants'
+import { LinkedButtonBase } from '../utils/linkedComponents'
 import { MovesModal } from './MovesModal'
 import { GamesModal } from './GamesModal'
 
@@ -20,7 +20,6 @@ interface DetailViewProps {
   pokeData: PokemonData
   speciesData: SpeciesData
   evoChain: EvolutionStep[]
-  onSelectPokemon?: (id: string) => void
 }
 
 function cleanFlavorText(text: string): string {
@@ -64,7 +63,7 @@ function InfoTile({ label, value }: { label: string; value: ReactNode }) {
   )
 }
 
-export function DetailView({ pokeData, speciesData, evoChain, onSelectPokemon }: DetailViewProps) {
+export function DetailView({ pokeData, speciesData, evoChain }: DetailViewProps) {
   const [openModal, setOpenModal] = useState<'moves' | 'games' | null>(null)
   const genName = speciesData?.generation?.name?.split('-').pop()?.toUpperCase() ?? ''
   const genus = englishGenus(speciesData)
@@ -268,9 +267,10 @@ export function DetailView({ pokeData, speciesData, evoChain, onSelectPokemon }:
           >
             {evoChain.map((step, i) => (
               <Stack key={step.id} direction="row" spacing={2.5} sx={{ alignItems: 'center' }}>
-                <ButtonBase
+                <LinkedButtonBase
                   className="evo-step"
-                  onClick={() => onSelectPokemon?.(step.id)}
+                  to="/pokemon/$id"
+                  params={{ id: step.id }}
                   sx={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -293,7 +293,7 @@ export function DetailView({ pokeData, speciesData, evoChain, onSelectPokemon }:
                   <Typography sx={{ textTransform: 'capitalize', fontWeight: 'bold', fontSize: 14, mt: 1 }}>
                     {step.name}
                   </Typography>
-                </ButtonBase>
+                </LinkedButtonBase>
                 {i < evoChain.length - 1 && <ArrowForwardIcon sx={{ color: '#ccc', fontSize: 28 }} />}
               </Stack>
             ))}

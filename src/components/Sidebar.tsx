@@ -12,7 +12,6 @@ import Accordion from '@mui/material/Accordion'
 import AccordionSummary from '@mui/material/AccordionSummary'
 import AccordionDetails from '@mui/material/AccordionDetails'
 import List from '@mui/material/List'
-import ListItemButton from '@mui/material/ListItemButton'
 import ListItemAvatar from '@mui/material/ListItemAvatar'
 import ListItemText from '@mui/material/ListItemText'
 import Avatar from '@mui/material/Avatar'
@@ -22,32 +21,36 @@ import { useFilters } from '../hooks/FiltersContext'
 import { pokemonIdFromUrl, pokemonName } from '../utils/pokemon'
 import { GEN_RANGES } from '../utils/constants'
 import { DRAWER_WIDTH } from '../theme'
+import { LinkedListItemButton } from '../utils/linkedComponents'
 
 interface SidebarProps {
   filteredPokemon: { name: string; url: string }[]
-  onSelect: (id: string) => void
   selectedId: string | null
   variant: 'permanent' | 'temporary'
   open: boolean
   onClose: () => void
+  /** Called after navigating to a Pokémon — used to close the drawer on mobile. */
+  onNavigate?: () => void
 }
 
 interface PokemonRowProps {
   id: string
   name: string
   active: boolean
-  onSelect: (id: string) => void
+  onNavigate?: () => void
 }
 
 /**
  * Memoized so that selecting a Pokémon only re-renders the previously- and
  * newly-active rows, not all ~1000 rows across every expanded generation.
  */
-const PokemonRow = memo(function PokemonRow({ id, name, active, onSelect }: PokemonRowProps) {
+const PokemonRow = memo(function PokemonRow({ id, name, active, onNavigate }: PokemonRowProps) {
   return (
-    <ListItemButton
+    <LinkedListItemButton
+      to="/pokemon/$id"
+      params={{ id }}
+      onClick={onNavigate}
       selected={active}
-      onClick={() => onSelect(id)}
       sx={{
         color: '#fff',
         borderLeft: '10px solid transparent',
@@ -75,7 +78,7 @@ const PokemonRow = memo(function PokemonRow({ id, name, active, onSelect }: Poke
       <Typography sx={{ fontSize: 12, opacity: 0.7, fontFamily: 'monospace', ml: 1 }}>
         #{id.padStart(4, '0')}
       </Typography>
-    </ListItemButton>
+    </LinkedListItemButton>
   )
 })
 
@@ -85,7 +88,7 @@ const PokemonRow = memo(function PokemonRow({ id, name, active, onSelect }: Poke
  * would re-reconcile the entire ~1000-row list even though Sidebar's own
  * props didn't change.
  */
-export const Sidebar = memo(function Sidebar({ filteredPokemon, onSelect, selectedId, variant, open, onClose }: SidebarProps) {
+export const Sidebar = memo(function Sidebar({ filteredPokemon, selectedId, variant, open, onClose, onNavigate }: SidebarProps) {
   const { searchTerm, setSearchTerm, genFilter, setGenFilter, typeFilter, setTypeFilter, types } =
     useFilters()
 
@@ -197,7 +200,7 @@ export const Sidebar = memo(function Sidebar({ filteredPokemon, onSelect, select
                       id={id}
                       name={p.name}
                       active={selectedId === id}
-                      onSelect={onSelect}
+                      onNavigate={onNavigate}
                     />
                   )
                 })}
