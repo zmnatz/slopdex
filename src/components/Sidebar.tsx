@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react'
 import Box from '@mui/material/Box'
 import Drawer from '@mui/material/Drawer'
 import Typography from '@mui/material/Typography'
@@ -31,9 +32,74 @@ interface SidebarProps {
   onClose: () => void
 }
 
-export function Sidebar({ filteredPokemon, onSelect, selectedId, variant, open, onClose }: SidebarProps) {
+interface PokemonRowProps {
+  id: string
+  name: string
+  active: boolean
+  onSelect: (id: string) => void
+}
+
+/**
+ * Memoized so that selecting a Pokémon only re-renders the previously- and
+ * newly-active rows, not all ~1000 rows across every expanded generation.
+ */
+const PokemonRow = memo(function PokemonRow({ id, name, active, onSelect }: PokemonRowProps) {
+  return (
+    <ListItemButton
+      selected={active}
+      onClick={() => onSelect(id)}
+      sx={{
+        color: '#fff',
+        borderLeft: '10px solid transparent',
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        '&.Mui-selected': {
+          bgcolor: 'rgba(0,0,0,0.2)',
+          borderLeftColor: '#fff',
+        },
+        '&.Mui-selected:hover': { bgcolor: 'rgba(0,0,0,0.2)' },
+        '&:hover': { bgcolor: 'rgba(0,0,0,0.2)', borderLeftColor: '#fff' },
+      }}
+    >
+      <ListItemAvatar>
+        <Avatar
+          src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`}
+          alt={name}
+          slotProps={{ img: { loading: 'lazy' } }}
+          sx={{ bgcolor: 'transparent', width: 50, height: 50 }}
+        />
+      </ListItemAvatar>
+      <ListItemText
+        primary={name}
+        slotProps={{ primary: { sx: { fontWeight: 600, textTransform: 'capitalize' } } }}
+      />
+      <Typography sx={{ fontSize: 12, opacity: 0.7, fontFamily: 'monospace', ml: 1 }}>
+        #{id.padStart(4, '0')}
+      </Typography>
+    </ListItemButton>
+  )
+})
+
+/**
+ * Memoized because App re-renders on every fetch-status change while a
+ * Pokémon's detail data loads; without this, each of those transitions
+ * would re-reconcile the entire ~1000-row list even though Sidebar's own
+ * props didn't change.
+ */
+export const Sidebar = memo(function Sidebar({ filteredPokemon, onSelect, selectedId, variant, open, onClose }: SidebarProps) {
   const { searchTerm, setSearchTerm, genFilter, setGenFilter, typeFilter, setTypeFilter, types } =
     useFilters()
+
+  const pokemonByGen = useMemo(
+    () =>
+      GEN_RANGES.map(gen => ({
+        gen,
+        pokemon: filteredPokemon.filter(p => {
+          const id = parseInt(pokemonIdFromUrl(p.url))
+          return id >= gen.start && id <= gen.end
+        }),
+      })).filter(g => g.pokemon.length > 0),
+    [filteredPokemon],
+  )
 
   const content = (
     <Box
@@ -97,81 +163,48 @@ export function Sidebar({ filteredPokemon, onSelect, selectedId, variant, open, 
         </Stack>
       </Box>
       <Box sx={{ flex: 1, overflowY: 'auto' }}>
-        {GEN_RANGES.map(gen => {
-          const genPokemon = filteredPokemon.filter(p => {
-            const id = parseInt(pokemonIdFromUrl(p.url))
-            return id >= gen.start && id <= gen.end
-          })
-          if (genPokemon.length === 0) return null
-          return (
-            <Accordion
-              key={gen.name}
-              defaultExpanded
-              disableGutters
-              square
-              sx={{
-                bgcolor: 'transparent',
-                color: '#fff',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                '&:before': { display: 'none' },
-              }}
+        {pokemonByGen.map(({ gen, pokemon }) => (
+          <Accordion
+            key={gen.name}
+            defaultExpanded
+            disableGutters
+            square
+            sx={{
+              bgcolor: 'transparent',
+              color: '#fff',
+              borderBottom: '1px solid rgba(255,255,255,0.1)',
+              '&:before': { display: 'none' },
+            }}
+          >
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon sx={{ color: '#fff' }} />}
+              sx={{ bgcolor: 'rgba(0,0,0,0.1)' }}
             >
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon sx={{ color: '#fff' }} />}
-                sx={{ bgcolor: 'rgba(0,0,0,0.1)' }}
-              >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 1 }}>
-                  <Typography sx={{ fontWeight: 'bold', fontSize: 16, textTransform: 'uppercase' }}>
-                    {gen.name}
-                  </Typography>
-                  <Typography sx={{ fontSize: 12, opacity: 0.8 }}>{genPokemon.length}</Typography>
-                </Box>
-              </AccordionSummary>
-              <AccordionDetails sx={{ p: 0 }}>
-                <List disablePadding>
-                  {genPokemon.map(p => {
-                    const id = pokemonIdFromUrl(p.url)
-                    const active = selectedId === id
-                    return (
-                      <ListItemButton
-                        key={id}
-                        selected={active}
-                        onClick={() => onSelect(id)}
-                        sx={{
-                          color: '#fff',
-                          borderLeft: '10px solid transparent',
-                          borderBottom: '1px solid rgba(255,255,255,0.1)',
-                          '&.Mui-selected': {
-                            bgcolor: 'rgba(0,0,0,0.2)',
-                            borderLeftColor: '#fff',
-                          },
-                          '&.Mui-selected:hover': { bgcolor: 'rgba(0,0,0,0.2)' },
-                          '&:hover': { bgcolor: 'rgba(0,0,0,0.2)', borderLeftColor: '#fff' },
-                        }}
-                      >
-                        <ListItemAvatar>
-                          <Avatar
-                            src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`}
-                            alt={p.name}
-                            slotProps={{ img: { loading: 'lazy' } }}
-                            sx={{ bgcolor: 'transparent', width: 50, height: 50 }}
-                          />
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={p.name}
-                          slotProps={{ primary: { sx: { fontWeight: 600, textTransform: 'capitalize' } } }}
-                        />
-                        <Typography sx={{ fontSize: 12, opacity: 0.7, fontFamily: 'monospace', ml: 1 }}>
-                          #{id.padStart(4, '0')}
-                        </Typography>
-                      </ListItemButton>
-                    )
-                  })}
-                </List>
-              </AccordionDetails>
-            </Accordion>
-          )
-        })}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 1 }}>
+                <Typography sx={{ fontWeight: 'bold', fontSize: 16, textTransform: 'uppercase' }}>
+                  {gen.name}
+                </Typography>
+                <Typography sx={{ fontSize: 12, opacity: 0.8 }}>{pokemon.length}</Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 0 }}>
+              <List disablePadding>
+                {pokemon.map(p => {
+                  const id = pokemonIdFromUrl(p.url)
+                  return (
+                    <PokemonRow
+                      key={id}
+                      id={id}
+                      name={p.name}
+                      active={selectedId === id}
+                      onSelect={onSelect}
+                    />
+                  )
+                })}
+              </List>
+            </AccordionDetails>
+          </Accordion>
+        ))}
       </Box>
     </Box>
   )
@@ -198,4 +231,4 @@ export function Sidebar({ filteredPokemon, onSelect, selectedId, variant, open, 
       {content}
     </Drawer>
   )
-}
+})

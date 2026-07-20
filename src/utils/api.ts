@@ -1,26 +1,13 @@
+import { PokemonClient, EvolutionClient } from 'pokenode-ts'
 import type { PokemonData, SpeciesData, EvolutionChain } from './types'
+import { pokemonIdFromUrl } from './pokemon'
 
-const BASE = 'https://pokeapi.co/api/v2'
+// PokeAPI data is effectively static within a session; cache aggressively
+// so revisiting a type filter or re-navigating doesn't re-hit the network.
+const CACHE_OPTIONS = { ttl: 1000 * 60 * 30 }
 
-async function fetchWithRetry<T>(url: string, retries = 3, backoff = 300): Promise<T> {
-  try {
-    const response = await fetch(url)
-    if (!response.ok) {
-      if (response.status === 429 && retries > 0) {
-        await new Promise(r => setTimeout(r, backoff))
-        return fetchWithRetry(url, retries - 1, backoff * 2)
-      }
-      throw new Error(`HTTP ${response.status}`)
-    }
-    return await response.json()
-  } catch (e) {
-    if (retries > 0) {
-      await new Promise(r => setTimeout(r, backoff))
-      return fetchWithRetry(url, retries - 1, backoff * 2)
-    }
-    throw e
-  }
-}
+const pokemonClient = new PokemonClient({ cacheOptions: CACHE_OPTIONS })
+const evolutionClient = new EvolutionClient({ cacheOptions: CACHE_OPTIONS })
 
 interface TypeResult {
   name: string
@@ -40,21 +27,24 @@ interface TypeData {
 }
 
 export const pokeApi = {
-  listAll: () =>
-    fetchWithRetry<PokemonListResponse>(`${BASE}/pokemon?limit=1025`),
+  listAll: (): Promise<PokemonListResponse> => pokemonClient.listPokemons(0, 1025),
 
+  // pokenode-ts's generated types are broader/more nullable than the fields
+  // this app actually reads (see CONTEXT.md's Move/Game glossary entries) —
+  // the facade narrows to our own domain types at this boundary.
   getPokemon: (id: string) =>
-    fetchWithRetry<PokemonData>(`${BASE}/pokemon/${id}`),
+    pokemonClient.getPokemonById(Number(id)) as unknown as Promise<PokemonData>,
 
   getSpecies: (id: string) =>
-    fetchWithRetry<SpeciesData>(`${BASE}/pokemon-species/${id}`),
+    pokemonClient.getPokemonSpeciesById(Number(id)) as unknown as Promise<SpeciesData>,
 
   getEvolutionChain: (url: string) =>
-    fetchWithRetry<EvolutionChain>(url),
+    evolutionClient.getEvolutionChainById(
+      Number(pokemonIdFromUrl(url)),
+    ) as unknown as Promise<EvolutionChain>,
 
-  getTypeList: () =>
-    fetchWithRetry<TypeListResponse>(`${BASE}/type`),
+  getTypeList: (): Promise<TypeListResponse> => pokemonClient.listTypes(0, 100),
 
   getTypePokemon: (type: string) =>
-    fetchWithRetry<TypeData>(`${BASE}/type/${type}`),
+    pokemonClient.getTypeByName(type) as unknown as Promise<TypeData>,
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider, useTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
@@ -37,10 +37,12 @@ function AppContent() {
     error: detailError,
   } = usePokemonDetail(selectedId)
 
-  function handleSelect(id: string) {
+  const handleSelect = useCallback((id: string) => {
     setSelectedId(id)
     if (isMobile) setMobileOpen(false)
-  }
+  }, [isMobile])
+
+  const closeMobileDrawer = useCallback(() => setMobileOpen(false), [])
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
@@ -72,7 +74,7 @@ function AppContent() {
         selectedId={selectedId}
         variant={isMobile ? 'temporary' : 'permanent'}
         open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
+        onClose={closeMobileDrawer}
       />
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
         {isMobile && <Toolbar />}
