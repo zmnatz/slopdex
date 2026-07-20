@@ -1,15 +1,19 @@
-import { describe, it, expect } from 'vitest'
-import { render } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
+import { ThemeProvider } from '@mui/material/styles'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { FiltersProvider } from '../hooks/FiltersContext'
+import { theme } from '../theme'
 import { Sidebar } from './Sidebar'
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return (
-    <QueryClientProvider client={qc}>
-      <FiltersProvider>{children}</FiltersProvider>
-    </QueryClientProvider>
+    <ThemeProvider theme={theme}>
+      <QueryClientProvider client={qc}>
+        <FiltersProvider>{children}</FiltersProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   )
 }
 
@@ -20,24 +24,30 @@ describe('Sidebar', () => {
     ],
     onSelect: () => {},
     selectedId: null,
+    variant: 'permanent' as const,
+    open: true,
+    onClose: () => {},
   }
 
   it('renders the Pokédex title', () => {
-    const { container } = render(<Sidebar {...defaultProps} />, { wrapper: Wrapper })
-    const headings = container.querySelectorAll('h1')
-    expect(headings.length).toBeGreaterThan(0)
-    expect(headings[0]?.textContent).toBe('Pokédex')
+    render(<Sidebar {...defaultProps} />, { wrapper: Wrapper })
+    expect(screen.getByRole('heading', { name: 'Pokédex' })).toBeTruthy()
   })
 
   it('renders search input', () => {
-    const { container } = render(<Sidebar {...defaultProps} />, { wrapper: Wrapper })
-    const inputs = container.querySelectorAll('#search-input')
-    expect(inputs.length).toBeGreaterThan(0)
+    render(<Sidebar {...defaultProps} />, { wrapper: Wrapper })
+    expect(screen.getByPlaceholderText('Search all generations...')).toBeTruthy()
   })
 
   it('renders pokemon items', () => {
-    const { container } = render(<Sidebar {...defaultProps} />, { wrapper: Wrapper })
-    const items = container.querySelectorAll('.pokemon-item')
-    expect(items.length).toBeGreaterThan(0)
+    render(<Sidebar {...defaultProps} />, { wrapper: Wrapper })
+    expect(screen.getByRole('button', { name: /pikachu/i })).toBeTruthy()
+  })
+
+  it('calls onSelect when a pokemon item is clicked', () => {
+    const onSelect = vi.fn()
+    render(<Sidebar {...defaultProps} onSelect={onSelect} />, { wrapper: Wrapper })
+    fireEvent.click(screen.getByRole('button', { name: /pikachu/i }))
+    expect(onSelect).toHaveBeenCalledWith('25')
   })
 })

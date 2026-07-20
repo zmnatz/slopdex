@@ -1,4 +1,11 @@
-import { useEffect } from 'react'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import IconButton from '@mui/material/IconButton'
+import List from '@mui/material/List'
+import ListItem from '@mui/material/ListItem'
+import ListItemText from '@mui/material/ListItemText'
+import CloseIcon from '@mui/icons-material/Close'
 import type { GameIndex } from '../utils/types'
 import { gameNames } from '../utils/pokemon'
 
@@ -8,35 +15,25 @@ interface GamesModalProps {
 }
 
 export function GamesModal({ gameIndices, onClose }: GamesModalProps) {
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
-
   const names = gameNames(gameIndices)
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div
-        className="modal-content games-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="games-modal-title"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="modal-header">
-          <h3 id="games-modal-title">Games</h3>
-          <button className="modal-close" onClick={onClose} aria-label="Close">×</button>
-        </div>
-        <ul className="games-list">
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs">
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        Games
+        <IconButton aria-label="Close" onClick={onClose} size="small">
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent dividers>
+        <List dense disablePadding>
           {names.map(name => (
-            <li key={name} className="game-item">{name.replace(/-/g, ' ')}</li>
+            <ListItem key={name} className="game-item" disableGutters>
+              <ListItemText primary={name.replace(/-/g, ' ')} slotProps={{ primary: { sx: { textTransform: 'capitalize' } } }} />
+            </ListItem>
           ))}
-        </ul>
-      </div>
-    </div>
+        </List>
+      </DialogContent>
+    </Dialog>
   )
 }
