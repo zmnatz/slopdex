@@ -49,6 +49,7 @@ function AppContent() {
         )}
         {pokeData && speciesData && !loading && (
           <DetailView
+            key={selectedId}
             pokeData={pokeData}
             speciesData={speciesData}
             evoChain={evoChain}

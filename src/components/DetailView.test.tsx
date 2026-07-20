@@ -26,6 +26,14 @@ const mockPokemon: PokemonData = {
   weight: 60,
   cries: { latest: 'https://example.com/cry.ogg', legacy: '' },
   base_experience: 112,
+  moves: [
+    { move: { name: 'thunderbolt' } },
+    { move: { name: 'quick-attack' } },
+  ],
+  game_indices: [
+    { version: { name: 'red' } },
+    { version: { name: 'yellow' } },
+  ],
 }
 
 const mockSpecies: SpeciesData = {
@@ -198,5 +206,56 @@ describe('DetailView', () => {
     const steps = container.querySelectorAll('.evo-step')
     fireEvent.click(steps[1])
     expect(onSelect).toHaveBeenCalledWith('25')
+  })
+
+  it('renders Moves and Games section buttons but no modal by default', () => {
+    const { container } = render(
+      <DetailView
+        pokeData={mockPokemon}
+        speciesData={mockSpecies}
+        evoChain={mockEvoChain}
+      />,
+    )
+    expect(container.querySelector('.moves-section')).toBeTruthy()
+    expect(container.querySelector('.games-section')).toBeTruthy()
+    expect(container.querySelector('.modal-backdrop')).toBeNull()
+  })
+
+  it('opens the moves modal when View Moves is clicked', () => {
+    const { container } = render(
+      <DetailView
+        pokeData={mockPokemon}
+        speciesData={mockSpecies}
+        evoChain={mockEvoChain}
+      />,
+    )
+    fireEvent.click(container.querySelector('.moves-section .section-action-button')!)
+    expect(container.querySelector('.moves-modal')).toBeTruthy()
+    expect(container.textContent).toContain('thunderbolt')
+  })
+
+  it('opens the games modal when View Games is clicked', () => {
+    const { container } = render(
+      <DetailView
+        pokeData={mockPokemon}
+        speciesData={mockSpecies}
+        evoChain={mockEvoChain}
+      />,
+    )
+    fireEvent.click(container.querySelector('.games-section .section-action-button')!)
+    expect(container.querySelector('.games-modal')).toBeTruthy()
+    expect(container.textContent).toContain('red')
+  })
+
+  it('does not render moves/games sections when data is empty', () => {
+    const { container } = render(
+      <DetailView
+        pokeData={{ ...mockPokemon, moves: [], game_indices: [] }}
+        speciesData={mockSpecies}
+        evoChain={mockEvoChain}
+      />,
+    )
+    expect(container.querySelector('.moves-section')).toBeNull()
+    expect(container.querySelector('.games-section')).toBeNull()
   })
 })

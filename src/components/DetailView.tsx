@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import type { PokemonData, SpeciesData, EvolutionStep } from '../utils/types'
 import { TYPE_COLORS } from '../utils/constants'
+import { MovesModal } from './MovesModal'
+import { GamesModal } from './GamesModal'
 
 interface DetailViewProps {
   pokeData: PokemonData
@@ -26,6 +29,7 @@ function englishFlavorText(speciesData: SpeciesData): string | null {
 }
 
 export function DetailView({ pokeData, speciesData, evoChain, onSelectPokemon }: DetailViewProps) {
+  const [openModal, setOpenModal] = useState<'moves' | 'games' | null>(null)
   const genName = speciesData?.generation?.name?.split('-').pop()?.toUpperCase() ?? ''
   const genus = englishGenus(speciesData)
   const flavorText = englishFlavorText(speciesData)
@@ -103,6 +107,22 @@ export function DetailView({ pokeData, speciesData, evoChain, onSelectPokemon }:
           </div>
         </div>
       )}
+      {pokeData.moves.length > 0 && (
+        <div className="moves-section">
+          <h3>Moves</h3>
+          <button className="section-action-button" onClick={() => setOpenModal('moves')}>
+            View Moves
+          </button>
+        </div>
+      )}
+      {pokeData.game_indices.length > 0 && (
+        <div className="games-section">
+          <h3>Games</h3>
+          <button className="section-action-button" onClick={() => setOpenModal('games')}>
+            View Games
+          </button>
+        </div>
+      )}
       {genName && (
         <div className="gen-container">
           <span className="gen-badge">Gen {genName}</span>
@@ -147,6 +167,12 @@ export function DetailView({ pokeData, speciesData, evoChain, onSelectPokemon }:
             ))}
           </div>
         </div>
+      )}
+      {openModal === 'moves' && (
+        <MovesModal moves={pokeData.moves} onClose={() => setOpenModal(null)} />
+      )}
+      {openModal === 'games' && (
+        <GamesModal gameIndices={pokeData.game_indices} onClose={() => setOpenModal(null)} />
       )}
     </div>
   )

@@ -17,6 +17,12 @@ A tree of species linked by evolution. Flattened into a linear `EvolutionStep[]`
 ### Filter
 A predicate applied to the full Pokémon list. Three filter dimensions exist: search term (text match on name), generation (numeric range of ids), and type (membership in a type's pokemon set).
 
+### Move
+An attack or technique a Pokémon can learn, sourced from `pokemon.moves[].move`. Displayed as a flat, alphabetized, deduplicated-by-name list — the app does not track which game/version group a move's learn method or level applies to, so per-move learn detail (level-up level, TM, egg, tutor) is intentionally not surfaced.
+
+### Game
+An individual game title a Pokémon appears in (e.g. `red`, `gold`, `scarlet`), sourced from `pokemon.game_indices[].version`. Distinct from a **version group** (a paired release sharing move-learn data, e.g. `red-blue`) — the app uses `game_indices`, not `moves[].version_group_details`, as the source of truth for "games this Pokémon appears in," since that's the field PokeAPI purpose-built for dex presence.
+
 ## Architecture vocabulary
 
 When describing modules, interfaces, and their relationships, use the terms from the `/codebase-design` skill: module, interface, implementation, depth, shallow, seam, adapter, leverage, locality.
