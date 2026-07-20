@@ -1,43 +1,62 @@
-import { describe, it, expect } from 'vitest'
-import { render } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { screen, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { FiltersProvider } from '../hooks/FiltersContext'
+import { renderWithRouter } from '../test-utils/renderWithRouter'
 import { Sidebar } from './Sidebar'
 
-function Wrapper({ children }: { children: React.ReactNode }) {
+function renderSidebar(props: Partial<React.ComponentProps<typeof Sidebar>> = {}) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return (
+  const defaultProps: React.ComponentProps<typeof Sidebar> = {
+    filteredPokemon: [
+      { name: 'pikachu', url: 'https://pokeapi.co/api/v2/pokemon/25/' },
+    ],
+    selectedId: null,
+    variant: 'permanent',
+    open: true,
+    onClose: () => {},
+  }
+  return renderWithRouter(
     <QueryClientProvider client={qc}>
-      <FiltersProvider>{children}</FiltersProvider>
-    </QueryClientProvider>
+      <FiltersProvider>
+        <Sidebar {...defaultProps} {...props} />
+      </FiltersProvider>
+    </QueryClientProvider>,
   )
 }
 
 describe('Sidebar', () => {
-  const defaultProps = {
-    filteredPokemon: [
-      { name: 'pikachu', url: 'https://pokeapi.co/api/v2/pokemon/25/' },
-    ],
-    onSelect: () => {},
-    selectedId: null,
-  }
-
-  it('renders the Pokédex title', () => {
-    const { container } = render(<Sidebar {...defaultProps} />, { wrapper: Wrapper })
-    const headings = container.querySelectorAll('h1')
-    expect(headings.length).toBeGreaterThan(0)
-    expect(headings[0]?.textContent).toBe('Pokédex')
+  it('renders the Pokédex title', async () => {
+    await renderSidebar()
+    expect(screen.getByRole('heading', { name: 'Pokédex' })).toBeTruthy()
   })
 
-  it('renders search input', () => {
-    const { container } = render(<Sidebar {...defaultProps} />, { wrapper: Wrapper })
-    const inputs = container.querySelectorAll('#search-input')
-    expect(inputs.length).toBeGreaterThan(0)
+  it('renders search input', async () => {
+    await renderSidebar()
+    expect(screen.getByPlaceholderText('Search all generations...')).toBeTruthy()
   })
 
-  it('renders pokemon items', () => {
-    const { container } = render(<Sidebar {...defaultProps} />, { wrapper: Wrapper })
-    const items = container.querySelectorAll('.pokemon-item')
-    expect(items.length).toBeGreaterThan(0)
+  it('renders pokemon items as links', async () => {
+    await renderSidebar()
+    expect(screen.getByRole('link', { name: /pikachu/i })).toBeTruthy()
+  })
+
+  it('links a pokemon item to its detail route', async () => {
+    await renderSidebar()
+    const link = screen.getByRole('link', { name: /pikachu/i })
+    expect(link.getAttribute('href')).toBe('/pokemon/25')
+  })
+
+  it('marks the selected pokemon as active', async () => {
+    await renderSidebar({ selectedId: '25' })
+    const link = screen.getByRole('link', { name: /pikachu/i })
+    expect(link.className).toContain('Mui-selected')
+  })
+
+  it('calls onNavigate when a pokemon item is clicked', async () => {
+    const onNavigate = vi.fn()
+    await renderSidebar({ onNavigate })
+    fireEvent.click(screen.getByRole('link', { name: /pikachu/i }))
+    expect(onNavigate).toHaveBeenCalled()
   })
 })

@@ -1,11 +1,10 @@
-import { useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Sidebar } from './components/Sidebar'
-import { DetailView } from './components/DetailView'
+import { RouterProvider } from '@tanstack/react-router'
+import { ThemeProvider } from '@mui/material/styles'
+import CssBaseline from '@mui/material/CssBaseline'
+import { theme } from './theme'
+import { router } from './router'
 import { FiltersProvider } from './hooks/FiltersContext'
-import { usePokemonList } from './hooks/usePokemonList'
-import { usePokemonDetail } from './hooks/usePokemonDetail'
-import './App.css'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -13,61 +12,16 @@ const queryClient = new QueryClient({
   },
 })
 
-function AppContent() {
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const { filteredPokemon, error: listError } = usePokemonList()
-  const {
-    pokeData,
-    speciesData,
-    evoChain,
-    loading,
-    error: detailError,
-  } = usePokemonDetail(selectedId)
-
-  return (
-    <div className="app">
-      <Sidebar
-        filteredPokemon={filteredPokemon}
-        onSelect={setSelectedId}
-        selectedId={selectedId}
-      />
-      <main id="details">
-        {listError && <div className="placeholder-text">{listError}</div>}
-        {!listError && filteredPokemon.length === 0 && (
-          <div className="placeholder-text">Select a Pokémon to examine</div>
-        )}
-        {loading && (
-          <div className="loader-container" style={{ display: 'block' }}>
-            <div className="spinner" />
-            <div style={{ color: '#666', fontWeight: 'bold' }}>
-              Fetching Data...
-            </div>
-          </div>
-        )}
-        {detailError && !loading && (
-          <div className="placeholder-text">Error: {detailError}. Try again.</div>
-        )}
-        {pokeData && speciesData && !loading && (
-          <DetailView
-            key={selectedId}
-            pokeData={pokeData}
-            speciesData={speciesData}
-            evoChain={evoChain}
-            onSelectPokemon={setSelectedId}
-          />
-        )}
-      </main>
-    </div>
-  )
-}
-
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <FiltersProvider>
-        <AppContent />
-      </FiltersProvider>
-    </QueryClientProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <QueryClientProvider client={queryClient}>
+        <FiltersProvider>
+          <RouterProvider router={router} />
+        </FiltersProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   )
 }
 

@@ -1,7 +1,12 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, fireEvent } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+import { screen, fireEvent } from '@testing-library/react'
+import { renderWithRouter } from '../test-utils/renderWithRouter'
 import { DetailView } from './DetailView'
 import type { PokemonData, SpeciesData, EvolutionStep } from '../utils/types'
+
+function renderDetail(props: React.ComponentProps<typeof DetailView>) {
+  return renderWithRouter(<DetailView {...props} />)
+}
 
 const mockPokemon: PokemonData = {
   name: 'pikachu',
@@ -54,207 +59,106 @@ const mockEvoChain: EvolutionStep[] = [
 ]
 
 describe('DetailView', () => {
-  it('renders pokemon name', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-      />,
-    )
+  it('renders pokemon name', async () => {
+    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
     expect(container.textContent).toContain('pikachu')
   })
 
-  it('renders type badge', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-      />,
-    )
+  it('renders type badge', async () => {
+    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
     expect(container.textContent).toContain('electric')
   })
 
-  it('renders generation badge', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-      />,
-    )
+  it('renders generation badge', async () => {
+    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
     expect(container.textContent).toContain('Gen I')
   })
 
-  it('renders evolution chain', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-      />,
-    )
+  it('renders evolution chain', async () => {
+    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
     expect(container.textContent).toContain('pichu')
     expect(container.textContent).toContain('raichu')
   })
 
-  it('renders stats', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-      />,
-    )
+  it('renders stats', async () => {
+    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
     expect(container.textContent).toContain('hp')
     expect(container.textContent).toContain('speed')
   })
 
-  it('renders genus', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-      />,
-    )
+  it('renders genus', async () => {
+    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
     expect(container.textContent).toContain('Mouse Pokémon')
   })
 
-  it('renders flavor text', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-      />,
-    )
+  it('renders flavor text', async () => {
+    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
     expect(container.textContent).toContain('When several of these')
   })
 
-  it('renders height and weight', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-      />,
-    )
+  it('renders height and weight', async () => {
+    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
     expect(container.textContent).toContain('0.4 m')
     expect(container.textContent).toContain('6.0 kg')
   })
 
-  it('renders base experience', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-      />,
-    )
+  it('renders base experience', async () => {
+    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
     expect(container.textContent).toContain('112')
   })
 
-  it('renders abilities', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-      />,
-    )
+  it('renders abilities', async () => {
+    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
     expect(container.textContent).toContain('static')
     expect(container.textContent).toContain('lightning rod')
     expect(container.textContent).toContain('hidden')
   })
 
-  it('renders cry button', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-      />,
-    )
-    const button = container.querySelector('.cry-button')
+  it('renders cry button', async () => {
+    await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
+    const button = screen.getByRole('button', { name: 'Play cry' })
     expect(button).toBeTruthy()
-    expect(button?.textContent).toContain('Play')
+    expect(button.textContent).toContain('Play')
   })
 
-  it('does not render evolution section when chain is empty', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={[]}
-      />,
-    )
+  it('does not render evolution section when chain is empty', async () => {
+    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: [] })
     expect(container.querySelector('.evolution-section')).toBeNull()
   })
 
-  it('calls onSelectPokemon when evo step is clicked', () => {
-    const onSelect = vi.fn()
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-        onSelectPokemon={onSelect}
-      />,
-    )
+  it('links each evo step to its detail route', async () => {
+    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
     const steps = container.querySelectorAll('.evo-step')
-    fireEvent.click(steps[1])
-    expect(onSelect).toHaveBeenCalledWith('25')
+    expect(steps[1].getAttribute('href')).toBe('/pokemon/25')
   })
 
-  it('renders Moves and Games section buttons but no modal by default', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-      />,
-    )
+  it('renders Moves and Games section buttons but no modal by default', async () => {
+    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
     expect(container.querySelector('.moves-section')).toBeTruthy()
     expect(container.querySelector('.games-section')).toBeTruthy()
-    expect(container.querySelector('.modal-backdrop')).toBeNull()
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
-  it('opens the moves modal when View Moves is clicked', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-      />,
-    )
+  it('opens the moves modal when View Moves is clicked', async () => {
+    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
     fireEvent.click(container.querySelector('.moves-section .section-action-button')!)
-    expect(container.querySelector('.moves-modal')).toBeTruthy()
-    expect(container.textContent).toContain('thunderbolt')
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.textContent).toContain('thunderbolt')
   })
 
-  it('opens the games modal when View Games is clicked', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={mockPokemon}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-      />,
-    )
+  it('opens the games modal when View Games is clicked', async () => {
+    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
     fireEvent.click(container.querySelector('.games-section .section-action-button')!)
-    expect(container.querySelector('.games-modal')).toBeTruthy()
-    expect(container.textContent).toContain('red')
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.textContent).toContain('red')
   })
 
-  it('does not render moves/games sections when data is empty', () => {
-    const { container } = render(
-      <DetailView
-        pokeData={{ ...mockPokemon, moves: [], game_indices: [] }}
-        speciesData={mockSpecies}
-        evoChain={mockEvoChain}
-      />,
-    )
+  it('does not render moves/games sections when data is empty', async () => {
+    const { container } = await renderDetail({
+      pokeData: { ...mockPokemon, moves: [], game_indices: [] },
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    })
     expect(container.querySelector('.moves-section')).toBeNull()
     expect(container.querySelector('.games-section')).toBeNull()
   })
