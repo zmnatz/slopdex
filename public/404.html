@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pokédex</title>
+    <script>
+      // GitHub Pages serves this file for any unmatched path — including the
+      // app's client-side routes (e.g. /slopdex/pokemon/1) on direct visit or
+      // refresh, since GitHub Pages has no SPA fallback to index.html.
+      //
+      // Stash the real URL, then load the app at its root. The inline script
+      // in index.html restores the stashed path before the router module runs,
+      // so the deep-linked Pokémon still renders (and the link keeps working).
+      (function () {
+        // Base of this project site, derived from the URL (e.g. /slopdex/).
+        var root = '/' + (location.pathname.split('/')[1] || '') + '/'
+        try {
+          sessionStorage.setItem('slopdex:redirect', location.href)
+        } catch (e) {
+          // sessionStorage unavailable — still land on the app root below.
+        }
+        location.replace(root)
+      })()
+    </script>
+    <noscript>
+      <meta http-equiv="refresh" content="0;url=/slopdex/" />
+    </noscript>
+  </head>
+  <body></body>
+</html>
