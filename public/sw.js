@@ -15,7 +15,9 @@ function isCacheable(url) {
 self.addEventListener('install', (event) => {
   self.skipWaiting()
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(['/']))
+    // Relative to the SW script URL (/slopdex/sw.js) → precaches /slopdex/
+    // (index.html). An absolute '/' would fetch the user-site root instead.
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(['./']))
   )
 })
 

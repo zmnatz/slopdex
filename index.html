@@ -10,6 +10,31 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="manifest" href="manifest.json" />
     <title>Pokédex</title>
+    <script>
+      // GitHub Pages has no SPA fallback: a direct visit or refresh of a
+      // client-side route (e.g. /slopdex/pokemon/1) is answered by
+      // public/404.html, which stashes the real URL in sessionStorage and
+      // bounces here. Restore it before the app's module script runs —
+      // createRouter() in src/router.tsx captures the initial URL at module
+      // import time, so the rewrite must happen first.
+      (function () {
+        var key = 'slopdex:redirect'
+        try {
+          var redirect = sessionStorage.getItem(key)
+          if (redirect) {
+            sessionStorage.removeItem(key)
+            if (redirect !== location.href) {
+              var url = new URL(redirect, location.origin)
+              if (url.origin === location.origin) {
+                history.replaceState(null, '', url.pathname + url.search + url.hash)
+              }
+            }
+          }
+        } catch (e) {
+          // Ignore — the app simply opens at its root.
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
