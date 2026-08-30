@@ -1,37 +1,37 @@
+import { useQuery } from "@tanstack/react-query";
 /* eslint-disable react/only-export-components */
-import { createContext, useContext, useState, type ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { pokeApi } from '../utils/api'
+import { type ReactNode, createContext, useContext, useState } from "react";
+import { pokeApi } from "../utils/api";
 
 interface TypeInfo {
-  name: string
+  name: string;
 }
 
 interface FiltersValue {
-  searchTerm: string
-  setSearchTerm: (v: string) => void
-  genFilter: string
-  setGenFilter: (v: string) => void
-  typeFilter: string
-  setTypeFilter: (v: string) => void
-  types: { name: string }[]
+  searchTerm: string;
+  setSearchTerm: (v: string) => void;
+  genFilter: string;
+  setGenFilter: (v: string) => void;
+  typeFilter: string;
+  setTypeFilter: (v: string) => void;
+  types: { name: string }[];
 }
 
 // eslint-disable-next-line react/only-export-components
-const FiltersContext = createContext<FiltersValue | null>(null)
+const FiltersContext = createContext<FiltersValue | null>(null);
 
 export function FiltersProvider({ children }: { children: ReactNode }) {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [genFilter, setGenFilter] = useState('all')
-  const [typeFilter, setTypeFilter] = useState('all')
+  const [searchTerm, setSearchTerm] = useState("");
+  const [genFilter, setGenFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
 
   const typeListQuery = useQuery({
-    queryKey: ['types', 'list'],
+    queryKey: ["types", "list"],
     queryFn: pokeApi.getTypeList,
-    staleTime: Infinity,
+    staleTime: Number.POSITIVE_INFINITY,
     select: (data: { results: TypeInfo[] }) =>
-      data.results.filter(t => t.name !== 'unknown' && t.name !== 'shadow'),
-  })
+      data.results.filter((t) => t.name !== "unknown" && t.name !== "shadow"),
+  });
 
   return (
     <FiltersContext.Provider
@@ -47,11 +47,11 @@ export function FiltersProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </FiltersContext.Provider>
-  )
+  );
 }
 
 export function useFilters(): FiltersValue {
-  const ctx = useContext(FiltersContext)
-  if (!ctx) throw new Error('useFilters must be used inside <FiltersProvider>')
-  return ctx
+  const ctx = useContext(FiltersContext);
+  if (!ctx) throw new Error("useFilters must be used inside <FiltersProvider>");
+  return ctx;
 }

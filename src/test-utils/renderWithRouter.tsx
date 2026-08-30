@@ -1,14 +1,14 @@
-import type { ReactNode } from 'react'
-import { render } from '@testing-library/react'
-import { ThemeProvider } from '@mui/material/styles'
+import { ThemeProvider } from "@mui/material/styles";
 import {
+  RouterProvider,
+  createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
-  createMemoryHistory,
-  RouterProvider,
-} from '@tanstack/react-router'
-import { theme } from '../theme'
+} from "@tanstack/react-router";
+import { render } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { theme } from "../theme";
 
 /**
  * Renders `ui` as the root route of a throwaway router with in-memory
@@ -20,26 +20,35 @@ import { theme } from '../theme'
  * before rendering means the match is already resolved by the time this
  * returns, so callers can use ordinary `getBy*` queries afterward.
  */
-export async function renderWithRouter(ui: ReactNode, initialPath = '/') {
-  const rootRoute = createRootRoute({ component: () => ui })
-  const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: () => null })
+export async function renderWithRouter(ui: ReactNode, initialPath = "/") {
+  const rootRoute = createRootRoute({ component: () => ui });
+  const indexRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/",
+    component: () => null,
+  });
   const pokemonRoute = createRoute({
     getParentRoute: () => rootRoute,
-    path: '/pokemon/$id',
+    path: "/pokemon/$id",
     component: () => null,
-  })
-  const routeTree = rootRoute.addChildren([indexRoute, pokemonRoute])
+  });
+  const gameRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/game",
+    component: () => null,
+  });
+  const routeTree = rootRoute.addChildren([indexRoute, pokemonRoute, gameRoute]);
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [initialPath] }),
-  })
-  await router.load()
+  });
+  await router.load();
 
   const result = render(
     <ThemeProvider theme={theme}>
       <RouterProvider router={router} />
-    </ThemeProvider>,
-  )
+    </ThemeProvider>
+  );
 
-  return { ...result, router }
+  return { ...result, router };
 }

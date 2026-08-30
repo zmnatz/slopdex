@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test": "vitest run",
-    "lint": "oxlint",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "lint:fix": "biome check --write .",
     "preview": "vite preview",
     "prepare": "husky"
   },
@@ -26,6 +28,7 @@
     "react-error-boundary": "^6.1.2"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^24.13.2",
@@ -34,9 +37,6 @@
     "@vitejs/plugin-react": "^6.0.3",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
-    "oxlint": "^1.71.0",
-    "sharp": "^0.35.3",
-    "svgexport": "^0.4.2",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",
     "vitest": "^4.1.10"

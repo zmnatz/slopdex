@@ -1,33 +1,40 @@
-import { createRootRoute, createRoute, createRouter } from '@tanstack/react-router'
-import { AppLayout } from './routes/AppLayout'
-import { IndexRoute } from './routes/IndexRoute'
-import { PokemonDetailRoute } from './routes/PokemonDetailRoute'
+import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import { AppLayout } from "./routes/AppLayout";
+import { GameRoute } from "./routes/GameRoute";
+import { IndexRoute } from "./routes/IndexRoute";
+import { PokemonDetailRoute } from "./routes/PokemonDetailRoute";
 
 const rootRoute = createRootRoute({
   component: AppLayout,
-})
+});
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/',
+  path: "/",
   component: IndexRoute,
-})
+});
 
 const pokemonRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/pokemon/$id',
+  path: "/pokemon/$id",
   component: PokemonDetailRoute,
-})
+});
 
-const routeTree = rootRoute.addChildren([indexRoute, pokemonRoute])
+const gameRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/game",
+  component: GameRoute,
+});
+
+const routeTree = rootRoute.addChildren([indexRoute, pokemonRoute, gameRoute]);
 
 export const router = createRouter({
   routeTree,
-  basepath: '/slopdex',
-})
+  basepath: "/slopdex",
+});
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface Register {
-    router: typeof router
+    router: typeof router;
   }
 }

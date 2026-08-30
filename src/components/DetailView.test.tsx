@@ -1,165 +1,234 @@
-import { describe, it, expect } from 'vitest'
-import { screen, fireEvent } from '@testing-library/react'
-import { renderWithRouter } from '../test-utils/renderWithRouter'
-import { DetailView } from './DetailView'
-import type { PokemonData, SpeciesData, EvolutionStep } from '../utils/types'
+import { fireEvent, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { renderWithRouter } from "../test-utils/renderWithRouter";
+import type { EvolutionStep, PokemonData, SpeciesData } from "../utils/types";
+import { DetailView } from "./DetailView";
 
 function renderDetail(props: React.ComponentProps<typeof DetailView>) {
-  return renderWithRouter(<DetailView {...props} />)
+  return renderWithRouter(<DetailView {...props} />);
 }
 
 const mockPokemon: PokemonData = {
-  name: 'pikachu',
+  name: "pikachu",
   sprites: {
-    front_default: 'https://example.com/pikachu.png',
+    front_default: "https://example.com/pikachu.png",
     other: {
-      'official-artwork': { front_default: 'https://example.com/pikachu-art.png' },
+      "official-artwork": { front_default: "https://example.com/pikachu-art.png" },
     },
   },
-  types: [
-    { slot: 1, type: { name: 'electric' } },
-  ],
+  types: [{ slot: 1, type: { name: "electric" } }],
   stats: [
-    { base_stat: 55, stat: { name: 'hp' } },
-    { base_stat: 90, stat: { name: 'speed' } },
+    { base_stat: 55, stat: { name: "hp" } },
+    { base_stat: 90, stat: { name: "speed" } },
   ],
   abilities: [
-    { ability: { name: 'static' }, is_hidden: false, slot: 1 },
-    { ability: { name: 'lightning-rod' }, is_hidden: true, slot: 3 },
+    { ability: { name: "static" }, is_hidden: false, slot: 1 },
+    { ability: { name: "lightning-rod" }, is_hidden: true, slot: 3 },
   ],
   height: 4,
   weight: 60,
-  cries: { latest: 'https://example.com/cry.ogg', legacy: '' },
+  cries: { latest: "https://example.com/cry.ogg", legacy: "" },
   base_experience: 112,
-  moves: [
-    { move: { name: 'thunderbolt' } },
-    { move: { name: 'quick-attack' } },
-  ],
-  game_indices: [
-    { version: { name: 'red' } },
-    { version: { name: 'yellow' } },
-  ],
-}
+  moves: [{ move: { name: "thunderbolt" } }, { move: { name: "quick-attack" } }],
+  game_indices: [{ version: { name: "red" } }, { version: { name: "yellow" } }],
+};
 
 const mockSpecies: SpeciesData = {
-  generation: { name: 'generation-i' },
-  evolution_chain: { url: '' },
+  generation: { name: "generation-i" },
+  evolution_chain: { url: "" },
   flavor_text_entries: [
-    { flavor_text: 'When several of\nthese POKéMON\ngather, their\nelectricity could\nbuild up and cause\nlightning storms.', language: { name: 'en' }, version: { name: 'red' } },
+    {
+      flavor_text:
+        "When several of\nthese POKéMON\ngather, their\nelectricity could\nbuild up and cause\nlightning storms.",
+      language: { name: "en" },
+      version: { name: "red" },
+    },
   ],
-  genera: [
-    { genus: 'Mouse Pokémon', language: { name: 'en' } },
-  ],
-}
+  genera: [{ genus: "Mouse Pokémon", language: { name: "en" } }],
+};
 
 const mockEvoChain: EvolutionStep[] = [
-  { name: 'pichu', id: '172' },
-  { name: 'pikachu', id: '25' },
-  { name: 'raichu', id: '26' },
-]
+  { name: "pichu", id: "172" },
+  { name: "pikachu", id: "25" },
+  { name: "raichu", id: "26" },
+];
 
-describe('DetailView', () => {
-  it('renders pokemon name', async () => {
-    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
-    expect(container.textContent).toContain('pikachu')
-  })
+describe("DetailView", () => {
+  it("splits identity and details into two separate cards", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    });
+    const cards = Array.from(container.querySelectorAll(".MuiCard-root"));
+    expect(cards).toHaveLength(2);
+    expect(cards[0].textContent).toContain("pikachu");
+    expect(cards[0].textContent).toContain("Mouse Pokémon");
+    expect(cards[1].textContent).not.toContain("Mouse Pokémon");
+    expect(cards[1].textContent).toContain("hp");
+  });
 
-  it('renders type badge', async () => {
-    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
-    expect(container.textContent).toContain('electric')
-  })
+  it("renders pokemon name", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    });
+    expect(container.textContent).toContain("pikachu");
+  });
 
-  it('renders generation badge', async () => {
-    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
-    expect(container.textContent).toContain('Gen I')
-  })
+  it("renders type badge", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    });
+    expect(container.textContent).toContain("electric");
+  });
 
-  it('renders evolution chain', async () => {
-    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
-    expect(container.textContent).toContain('pichu')
-    expect(container.textContent).toContain('raichu')
-  })
+  it("renders generation badge", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    });
+    expect(container.textContent).toContain("Gen I");
+  });
 
-  it('renders stats', async () => {
-    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
-    expect(container.textContent).toContain('hp')
-    expect(container.textContent).toContain('speed')
-  })
+  it("renders evolution chain", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    });
+    expect(container.textContent).toContain("pichu");
+    expect(container.textContent).toContain("raichu");
+  });
 
-  it('renders genus', async () => {
-    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
-    expect(container.textContent).toContain('Mouse Pokémon')
-  })
+  it("renders stats", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    });
+    expect(container.textContent).toContain("hp");
+    expect(container.textContent).toContain("speed");
+  });
 
-  it('renders flavor text', async () => {
-    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
-    expect(container.textContent).toContain('When several of these')
-  })
+  it("renders genus", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    });
+    expect(container.textContent).toContain("Mouse Pokémon");
+  });
 
-  it('renders height and weight', async () => {
-    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
-    expect(container.textContent).toContain('0.4 m')
-    expect(container.textContent).toContain('6.0 kg')
-  })
+  it("renders flavor text", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    });
+    expect(container.textContent).toContain("When several of these");
+  });
 
-  it('renders base experience', async () => {
-    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
-    expect(container.textContent).toContain('112')
-  })
+  it("renders height and weight", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    });
+    expect(container.textContent).toContain("0.4 m");
+    expect(container.textContent).toContain("6.0 kg");
+  });
 
-  it('renders abilities', async () => {
-    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
-    expect(container.textContent).toContain('static')
-    expect(container.textContent).toContain('lightning rod')
-    expect(container.textContent).toContain('hidden')
-  })
+  it("renders base experience", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    });
+    expect(container.textContent).toContain("112");
+  });
 
-  it('renders cry button', async () => {
-    await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
-    const button = screen.getByRole('button', { name: 'Play cry' })
-    expect(button).toBeTruthy()
-    expect(button.textContent).toContain('Play')
-  })
+  it("renders abilities", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    });
+    expect(container.textContent).toContain("static");
+    expect(container.textContent).toContain("lightning rod");
+    expect(container.textContent).toContain("hidden");
+  });
 
-  it('does not render evolution section when chain is empty', async () => {
-    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: [] })
-    expect(container.querySelector('.evolution-section')).toBeNull()
-  })
+  it("renders cry button", async () => {
+    await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain });
+    const button = screen.getByRole("button", { name: "Play cry" });
+    expect(button).toBeTruthy();
+    expect(button.textContent).toContain("Play");
+  });
 
-  it('links each evo step to its detail route', async () => {
-    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
-    const steps = container.querySelectorAll('.evo-step')
-    expect(steps[1].getAttribute('href')).toBe('/pokemon/25')
-  })
+  it("does not render evolution section when chain is empty", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: [],
+    });
+    expect(container.querySelector(".evolution-section")).toBeNull();
+  });
 
-  it('renders Moves and Games section buttons but no modal by default', async () => {
-    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
-    expect(container.querySelector('.moves-section')).toBeTruthy()
-    expect(container.querySelector('.games-section')).toBeTruthy()
-    expect(screen.queryByRole('dialog')).toBeNull()
-  })
+  it("links each evo step to its detail route", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    });
+    const steps = container.querySelectorAll(".evo-step");
+    expect(steps[1].getAttribute("href")).toBe("/pokemon/25");
+  });
 
-  it('opens the moves modal when View Moves is clicked', async () => {
-    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
-    fireEvent.click(container.querySelector('.moves-section .section-action-button')!)
-    const dialog = screen.getByRole('dialog')
-    expect(dialog.textContent).toContain('thunderbolt')
-  })
+  it("renders Moves and Games section buttons but no modal by default", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    });
+    expect(container.querySelector(".moves-section")).toBeTruthy();
+    expect(container.querySelector(".games-section")).toBeTruthy();
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
 
-  it('opens the games modal when View Games is clicked', async () => {
-    const { container } = await renderDetail({ pokeData: mockPokemon, speciesData: mockSpecies, evoChain: mockEvoChain })
-    fireEvent.click(container.querySelector('.games-section .section-action-button')!)
-    const dialog = screen.getByRole('dialog')
-    expect(dialog.textContent).toContain('red')
-  })
+  it("opens the moves modal when View Moves is clicked", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    });
+    fireEvent.click(container.querySelector(".moves-section .section-action-button")!);
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.textContent).toContain("thunderbolt");
+  });
 
-  it('does not render moves/games sections when data is empty', async () => {
+  it("opens the games modal when View Games is clicked", async () => {
+    const { container } = await renderDetail({
+      pokeData: mockPokemon,
+      speciesData: mockSpecies,
+      evoChain: mockEvoChain,
+    });
+    fireEvent.click(container.querySelector(".games-section .section-action-button")!);
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.textContent).toContain("red");
+  });
+
+  it("does not render moves/games sections when data is empty", async () => {
     const { container } = await renderDetail({
       pokeData: { ...mockPokemon, moves: [], game_indices: [] },
       speciesData: mockSpecies,
       evoChain: mockEvoChain,
-    })
-    expect(container.querySelector('.moves-section')).toBeNull()
-    expect(container.querySelector('.games-section')).toBeNull()
-  })
-})
+    });
+    expect(container.querySelector(".moves-section")).toBeNull();
+    expect(container.querySelector(".games-section")).toBeNull();
+  });
+});

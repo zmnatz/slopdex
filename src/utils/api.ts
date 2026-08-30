@@ -1,29 +1,29 @@
-import { PokemonClient, EvolutionClient } from 'pokenode-ts'
-import type { PokemonData, SpeciesData, EvolutionChain } from './types'
-import { pokemonIdFromUrl } from './pokemon'
+import { EvolutionClient, PokemonClient } from "pokenode-ts";
+import { pokemonIdFromUrl } from "./pokemon";
+import type { EvolutionChain, PokemonData, SpeciesData } from "./types";
 
 // PokeAPI data is effectively static within a session; cache aggressively
 // so revisiting a type filter or re-navigating doesn't re-hit the network.
-const CACHE_OPTIONS = { ttl: 1000 * 60 * 30 }
+const CACHE_OPTIONS = { ttl: 1000 * 60 * 30 };
 
-const pokemonClient = new PokemonClient({ cacheOptions: CACHE_OPTIONS })
-const evolutionClient = new EvolutionClient({ cacheOptions: CACHE_OPTIONS })
+const pokemonClient = new PokemonClient({ cacheOptions: CACHE_OPTIONS });
+const evolutionClient = new EvolutionClient({ cacheOptions: CACHE_OPTIONS });
 
 interface TypeResult {
-  name: string
-  url: string
+  name: string;
+  url: string;
 }
 
 interface TypeListResponse {
-  results: TypeResult[]
+  results: TypeResult[];
 }
 
 interface PokemonListResponse {
-  results: { name: string; url: string }[]
+  results: { name: string; url: string }[];
 }
 
 interface TypeData {
-  pokemon: { pokemon: { name: string; url: string } }[]
+  pokemon: { pokemon: { name: string; url: string } }[];
 }
 
 export const pokeApi = {
@@ -40,11 +40,11 @@ export const pokeApi = {
 
   getEvolutionChain: (url: string) =>
     evolutionClient.getEvolutionChainById(
-      Number(pokemonIdFromUrl(url)),
+      Number(pokemonIdFromUrl(url))
     ) as unknown as Promise<EvolutionChain>,
 
   getTypeList: (): Promise<TypeListResponse> => pokemonClient.listTypes(0, 100),
 
   getTypePokemon: (type: string) =>
     pokemonClient.getTypeByName(type) as unknown as Promise<TypeData>,
-}
+};

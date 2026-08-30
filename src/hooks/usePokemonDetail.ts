@@ -1,6 +1,6 @@
-import { useSuspenseQueries, useSuspenseQuery } from '@tanstack/react-query'
-import { pokeApi } from '../utils/api'
-import { flattenEvolutionChain } from '../utils/evolution'
+import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { pokeApi } from "../utils/api";
+import { flattenEvolutionChain } from "../utils/evolution";
 
 /**
  * Suspends the calling component until data is ready (via <Suspense>) and
@@ -15,20 +15,28 @@ import { flattenEvolutionChain } from '../utils/evolution'
 export function usePokemonDetail(id: string) {
   const [{ data: pokeData }, { data: speciesData }] = useSuspenseQueries({
     queries: [
-      { queryKey: ['pokemon', id], queryFn: () => pokeApi.getPokemon(id), staleTime: Infinity },
-      { queryKey: ['species', id], queryFn: () => pokeApi.getSpecies(id), staleTime: Infinity },
+      {
+        queryKey: ["pokemon", id],
+        queryFn: () => pokeApi.getPokemon(id),
+        staleTime: Number.POSITIVE_INFINITY,
+      },
+      {
+        queryKey: ["species", id],
+        queryFn: () => pokeApi.getSpecies(id),
+        staleTime: Number.POSITIVE_INFINITY,
+      },
     ],
-  })
+  });
 
   const { data: evolutionData } = useSuspenseQuery({
-    queryKey: ['evolution', speciesData.evolution_chain.url],
+    queryKey: ["evolution", speciesData.evolution_chain.url],
     queryFn: () => pokeApi.getEvolutionChain(speciesData.evolution_chain.url),
-    staleTime: Infinity,
-  })
+    staleTime: Number.POSITIVE_INFINITY,
+  });
 
   return {
     pokeData,
     speciesData,
     evoChain: flattenEvolutionChain(evolutionData.chain),
-  }
+  };
 }

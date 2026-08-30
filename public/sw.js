@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pokedex-v2'
+const CACHE_NAME = 'pokedex-v3'
 
 const POKEAPI_ORIGIN = 'https://pokeapi.co'
 const SPRITES_ORIGIN = 'https://raw.githubusercontent.com'
@@ -33,6 +33,27 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
   if (!isCacheable(url)) return
 
+  // Same-origin loads (the app shell and its assets) prefer the network so
+  // deployed updates actually arrive; the cache only serves as an offline
+  // fallback. PokeAPI and sprites stay cache-first.
+  const isSameOrigin = url.origin === location.origin
+
+  if (isSameOrigin) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const clone = response.clone()
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
+          return response
+        })
+        .catch(async () => {
+          const cached = await caches.match(event.request)
+          return cached || new Response('Offline', { status: 503 })
+        })
+    )
+    return
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached
@@ -40,18 +61,10 @@ self.addEventListener('fetch', (event) => {
       return fetch(event.request).then((response) => {
         if (!response || response.status !== 200) return response
 
-        const isSprite = url.origin === SPRITES_ORIGIN
-        if (isSprite) {
-          const clone = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
-        } else {
-          const clone = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
-        }
+        const clone = response.clone()
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
         return response
-      }).catch(() => {
-        return new Response('Offline', { status: 503 })
-      })
+      }).catch(() => new Response('Offline', { status: 503 }))
     })
   )
 })

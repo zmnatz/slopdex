@@ -1,23 +1,20 @@
-import { afterEach } from 'vitest'
-import { cleanup } from '@testing-library/react'
+import { cleanup } from "@testing-library/react";
+import { afterEach } from "vitest";
 
-afterEach(() => cleanup())
+afterEach(() => cleanup());
 
 class ResizeObserverMock {
   observe() {}
   unobserve() {}
   disconnect() {}
 }
-window.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver
+window.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
 
-HTMLCanvasElement.prototype.getContext = function () {
-  return null
-} as unknown as typeof HTMLCanvasElement.prototype.getContext
+HTMLCanvasElement.prototype.getContext = (() =>
+  null) as unknown as typeof HTMLCanvasElement.prototype.getContext;
 
-HTMLCanvasElement.prototype.toDataURL = function () {
-  return ''
-}
+HTMLCanvasElement.prototype.toDataURL = () => "";
 
-Element.prototype.setPointerCapture = function () {}
-Element.prototype.releasePointerCapture = function () {}
-Element.prototype.hasPointerCapture = function () { return false }
+Element.prototype.setPointerCapture = () => {};
+Element.prototype.releasePointerCapture = () => {};
+Element.prototype.hasPointerCapture = () => false;
