@@ -1,7 +1,7 @@
 import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PokemonData, SpeciesData } from "../utils/types";
 import { PokemonCard } from "./PokemonCard";
 
@@ -40,11 +40,13 @@ function PokeBall() {
  * for round transitions. `masked` controls the identity flip (silhouette vs real).
  */
 export function GameIdentityCard({
+  pokemonId,
   pokeData,
   speciesData,
   flipping = false,
   onNext,
 }: {
+  pokemonId: number;
   pokeData: PokemonData;
   speciesData: SpeciesData;
   flipping?: boolean;
@@ -52,6 +54,13 @@ export function GameIdentityCard({
 }) {
   const [revealed, setRevealed] = useState(false);
   const masked = !revealed;
+  const prevId = useRef(pokemonId);
+  useEffect(() => {
+    if (prevId.current !== pokemonId) {
+      prevId.current = pokemonId;
+      setRevealed(false);
+    }
+  }, [pokemonId]);
 
   const flipAction = (
     <IconButton

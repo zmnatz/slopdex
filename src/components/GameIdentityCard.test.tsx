@@ -28,12 +28,13 @@ const mockSpecies: SpeciesData = {
   genera: [{ genus: "Shadow Pokémon", language: { name: "en" } }],
 };
 
-function renderCard(props?: { flipping?: boolean; onNext?: () => void }) {
+function renderCard(props?: { pokemonId?: number; flipping?: boolean; onNext?: () => void }) {
   return render(
     <GameIdentityCard
+      pokemonId={94}
       pokeData={mockPokemon}
       speciesData={mockSpecies}
-      onNext={props?.onNext ?? (() => {})}
+      onNext={() => {}}
       {...props}
     />
   );

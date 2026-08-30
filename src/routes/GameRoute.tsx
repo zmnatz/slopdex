@@ -76,6 +76,7 @@ export function GameRoute() {
       {round ? (
         <>
           <GameIdentityCard
+            pokemonId={round.id}
             pokeData={round.pokeData}
             speciesData={round.speciesData}
             flipping={flipping}
