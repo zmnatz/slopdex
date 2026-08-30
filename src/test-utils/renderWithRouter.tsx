@@ -1,4 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   RouterProvider,
   createMemoryHistory,
@@ -43,11 +44,14 @@ export async function renderWithRouter(ui: ReactNode, initialPath = "/") {
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   });
   await router.load();
+  const queryClient = new QueryClient();
 
   const result = render(
-    <ThemeProvider theme={theme}>
-      <RouterProvider router={router} />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <RouterProvider router={router} />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 
   return { ...result, router };

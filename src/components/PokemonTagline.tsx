@@ -27,19 +27,16 @@ function englishFlavorText(speciesData: SpeciesData): string | null {
  * trimmed flavor-text description. It sits on the full-width top card of the
  * card layouts (detail page + Who's That Pokémon?). Flavor text often names the
  * Pokémon, so the game renders `blurFlavor` heavily blurred while the card is
- * obscured instead of readable. `clampFlavor` pins the description to 3 lines
- * so the game card's height stays fixed across Pokémon.
+ * obscured instead of readable.
  */
 export function PokemonTagline({
   pokeData,
   speciesData,
   blurFlavor = false,
-  clampFlavor = false,
 }: {
   pokeData: PokemonData;
   speciesData: SpeciesData;
   blurFlavor?: boolean;
-  clampFlavor?: boolean;
 }) {
   const genus = englishGenus(speciesData);
   const flavorText = englishFlavorText(speciesData);
@@ -85,12 +82,10 @@ export function PokemonTagline({
             px: 2.5,
             filter: blurFlavor ? "blur(10px)" : "none",
             userSelect: blurFlavor ? "none" : "auto",
-            ...(clampFlavor && {
-              display: "-webkit-box",
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }),
+            display: "-webkit-box",
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
           }}
         >
           "{flavorText}"

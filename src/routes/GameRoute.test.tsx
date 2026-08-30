@@ -4,14 +4,20 @@ import { renderWithRouter } from "../test-utils/renderWithRouter";
 import type { PokemonData, SpeciesData } from "../utils/types";
 import { GameRoute } from "./GameRoute";
 
-const { useGameRoundMock, randomIdMock } = vi.hoisted(() => ({
-  useGameRoundMock: vi.fn(),
-  randomIdMock: vi.fn(() => 94),
-}));
+const { useGameRoundMock, buildQueueMock, refillQueueMock, usePrefetchBatchMock } = vi.hoisted(
+  () => ({
+    useGameRoundMock: vi.fn(),
+    buildQueueMock: vi.fn(() => [94]),
+    refillQueueMock: vi.fn(() => [25]),
+    usePrefetchBatchMock: vi.fn(),
+  })
+);
 
 vi.mock("../hooks/useGameRound", () => ({
   useGameRound: useGameRoundMock,
-  randomPokemonId: randomIdMock,
+  buildQueue: buildQueueMock,
+  refillQueue: refillQueueMock,
+  usePrefetchBatch: usePrefetchBatchMock,
 }));
 
 vi.stubGlobal(
@@ -64,7 +70,8 @@ beforeEach(() => {
     speciesData: mockSpecies,
     isPending: false,
   });
-  randomIdMock.mockReturnValue(94);
+  buildQueueMock.mockReturnValue([94]);
+  refillQueueMock.mockReturnValue([25]);
 });
 
 describe("GameRoute", () => {
@@ -93,7 +100,6 @@ describe("GameRoute", () => {
   it("draws a fresh round by clicking the revealed card, flipping the whole card over", async () => {
     vi.useFakeTimers();
     try {
-      randomIdMock.mockReturnValueOnce(94).mockReturnValue(25);
       await renderGame();
       const card = screen.getByTestId("flip-card");
       fireEvent.click(card);

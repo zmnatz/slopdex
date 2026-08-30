@@ -1,6 +1,7 @@
 import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
+import { useEffect, useState } from "react";
 import type { PokemonData, SpeciesData } from "../utils/types";
 import { PokemonCard } from "./PokemonCard";
 
@@ -41,25 +42,29 @@ function PokeBall() {
 export function GameIdentityCard({
   pokeData,
   speciesData,
-  masked,
   flipping = false,
-  onToggle,
   onNext,
 }: {
   pokeData: PokemonData;
   speciesData: SpeciesData;
-  masked: boolean;
   flipping?: boolean;
-  onToggle: () => void;
   onNext: () => void;
 }) {
+  const [revealed, setRevealed] = useState(false);
+  const masked = !revealed;
+  useEffect(() => {
+    if (flipping) {
+      setRevealed(false);
+    }
+  }, [flipping]);
+
   const flipAction = (
     <IconButton
       aria-label="Flip"
       color="primary"
       onClick={(event) => {
         event.stopPropagation();
-        onToggle();
+        setRevealed((r) => !r);
       }}
       size="small"
     >
@@ -76,7 +81,7 @@ export function GameIdentityCard({
         perspective: "1000px",
         cursor: flipping ? "default" : "pointer",
       }}
-      onClick={masked ? onToggle : onNext}
+      onClick={masked ? () => setRevealed(true) : onNext}
     >
       <Box
         sx={{
@@ -93,7 +98,6 @@ export function GameIdentityCard({
             speciesData={speciesData}
             action={flipAction}
             masked={masked}
-            clampFlavor
           />
         </Box>
 

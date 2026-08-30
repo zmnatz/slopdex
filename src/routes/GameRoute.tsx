@@ -4,7 +4,7 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DetailBody, DetailCard } from "../components/DetailView";
 import { GameIdentityCard } from "../components/GameIdentityCard";
-import { randomPokemonId, useGameRound } from "../hooks/useGameRound";
+import { buildQueue, refillQueue, useGameRound, usePrefetchBatch } from "../hooks/useGameRound";
 import type { PokemonData, SpeciesData } from "../utils/types";
 
 interface Round {
@@ -22,50 +22,34 @@ function playCry(pokeData: PokemonData) {
 }
 
 export function GameRoute() {
-  const [targetId, setTargetId] = useState(() => randomPokemonId());
+  const [queue, setQueue] = useState<number[]>(() => buildQueue());
   const [round, setRound] = useState<Round | null>(null);
-  const [revealed, setRevealed] = useState(false);
   const [flipping, setFlipping] = useState(false);
+  const targetId = queue[0];
   const { pokeData, speciesData } = useGameRound(targetId);
 
-  // Commit a fetched round once its data is ready. The card flips over to its
-  // back mid-turn and the new round commits hidden behind it, so the previous
-  // answer never lingers on screen. The app-level LinearProgress bar covers
-  // any wait if the fetch is slow.
-  useEffect(() => {
-    if (pokeData && speciesData && targetId !== round?.id) {
-      setRound({ id: targetId, pokeData, speciesData });
-      setRevealed(false);
-    }
-  }, [pokeData, speciesData, targetId, round]);
+  usePrefetchBatch(queue.slice(1, 6));
 
-  // Cry at the start of each round, once per round id.
-  const cryRoundId = useRef<number | null>(null);
-  useEffect(() => {
-    if (!revealed && round && cryRoundId.current !== round.id) {
-      cryRoundId.current = round.id;
-      playCry(round.pokeData);
-    }
-  }, [round, revealed]);
-
-  // Full-card flip between rounds: rotate to the back face, swap in the new
-  // (obscured) round at the midpoint while the back is showing, then flip back.
-  useEffect(() => {
-    if (!flipping) return;
-    const swapAt = setTimeout(() => {
-      setRevealed(false);
-      setTargetId(randomPokemonId());
-    }, 300);
-    const settleAt = setTimeout(() => setFlipping(false), 620);
-    return () => {
-      clearTimeout(swapAt);
-      clearTimeout(settleAt);
-    };
-  }, [flipping]);
-
-  const draw = useCallback(() => {
+  const drawPokemon = useCallback(() => {
     setFlipping(true);
+    setTimeout(() => {
+      setQueue((prev) => {
+        const shifted = prev.slice(1);
+        return shifted.length < 100 ? refillQueue(shifted) : shifted;
+      });
+    }, 300);
+    setTimeout(() => setFlipping(false), 620);
   }, []);
+
+  const drawnForId = useRef<number | null>(null);
+  useEffect(() => {
+    if (!pokeData || !speciesData) return;
+    if (round?.id === targetId) return;
+    if (drawnForId.current === targetId) return;
+    drawnForId.current = targetId;
+    setRound({ id: targetId, pokeData, speciesData });
+    playCry(pokeData);
+  }, [pokeData, speciesData, targetId, round]);
 
   return (
     <Box
@@ -94,10 +78,8 @@ export function GameRoute() {
           <GameIdentityCard
             pokeData={round.pokeData}
             speciesData={round.speciesData}
-            masked={!revealed}
             flipping={flipping}
-            onToggle={() => setRevealed((r) => !r)}
-            onNext={draw}
+            onNext={drawPokemon}
           />
           <DetailCard>
             <DetailBody pokeData={round.pokeData} speciesData={round.speciesData} evoChain={[]} />

@@ -18,13 +18,11 @@ export function PokemonCard({
   speciesData,
   action,
   masked = false,
-  clampFlavor = false,
 }: {
   pokeData: PokemonData;
   speciesData: SpeciesData;
   action?: ReactNode;
   masked?: boolean;
-  clampFlavor?: boolean;
 }) {
   const genus = speciesData.genera.find((g) => g.language.name === "en")?.genus ?? "";
   const flavorText = cleanFlavor(
@@ -152,12 +150,10 @@ export function PokemonCard({
               px: 2.5,
               filter: masked ? "blur(10px)" : "none",
               userSelect: masked ? "none" : "auto",
-              ...(clampFlavor && {
-                display: "-webkit-box",
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }),
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
             }}
           >
             "{flavorText}"

@@ -28,23 +28,19 @@ const mockSpecies: SpeciesData = {
   genera: [{ genus: "Shadow Pokémon", language: { name: "en" } }],
 };
 
-type Props = React.ComponentProps<typeof GameIdentityCard>;
-
-function renderCard(props?: Partial<Props>) {
+function renderCard(props?: { flipping?: boolean; onNext?: () => void }) {
   return render(
     <GameIdentityCard
       pokeData={mockPokemon}
       speciesData={mockSpecies}
-      masked={true}
-      onToggle={() => {}}
-      onNext={() => {}}
+      onNext={props?.onNext ?? (() => {})}
       {...props}
     />
   );
 }
 
 describe("GameIdentityCard", () => {
-  it("shows silhouette and ??? while masked", () => {
+  it("starts masked: silhouette and ???", () => {
     renderCard();
     expect(screen.getByAltText("Mystery Pokémon")).toBeTruthy();
     expect(screen.getByText("???")).toBeTruthy();
@@ -53,11 +49,10 @@ describe("GameIdentityCard", () => {
   });
 
   it("shows artwork and name once unmasked", () => {
-    renderCard({ masked: false });
+    renderCard();
+    fireEvent.click(screen.getByTestId("flip-card"));
     expect(screen.getByAltText("gengar")).toBeTruthy();
     expect(screen.getByText("gengar")).toBeTruthy();
-    expect(screen.getByAltText("Mystery Pokémon")).toBeTruthy();
-    expect(screen.getByText("???")).toBeTruthy();
   });
 
   it("shows type chips and genus as static clues", () => {
@@ -66,47 +61,34 @@ describe("GameIdentityCard", () => {
     expect(screen.getByText("Shadow Pokémon")).toBeTruthy();
   });
 
-  it("clicking the card reveals while masked", () => {
-    const onToggle = vi.fn();
-    const onNext = vi.fn();
-    renderCard({ masked: true, onToggle, onNext });
-
+  it("clicking the card reveals when masked", () => {
+    renderCard();
     fireEvent.click(screen.getByTestId("flip-card"));
-    expect(onToggle).toHaveBeenCalledTimes(1);
-    expect(onNext).not.toHaveBeenCalled();
+    expect(screen.getByAltText("gengar")).toBeTruthy();
+    expect(screen.getByText("gengar")).toBeTruthy();
   });
 
-  it("clicking the card advances once unmasked", () => {
-    const onToggle = vi.fn();
+  it("clicking the card calls onNext once unmasked", () => {
     const onNext = vi.fn();
-    renderCard({ masked: false, onToggle, onNext });
-
+    renderCard({ onNext });
+    fireEvent.click(screen.getByTestId("flip-card"));
     fireEvent.click(screen.getByTestId("flip-card"));
     expect(onNext).toHaveBeenCalledTimes(1);
-    expect(onToggle).not.toHaveBeenCalled();
   });
 
   it("the flip button toggles without advancing", () => {
-    const onToggle = vi.fn();
-    const onNext = vi.fn();
-    const masked = renderCard({ masked: true, onToggle, onNext });
-    const flip = masked.container.querySelector('[aria-label="Flip"]')!;
-
+    renderCard();
+    const flip = document.querySelector('[aria-label="Flip"]')!;
     fireEvent.click(flip);
-    expect(onToggle).toHaveBeenCalledTimes(1);
-    expect(onNext).not.toHaveBeenCalled();
-
-    const unmasked = renderCard({ masked: false, onToggle, onNext });
-    const flipAgain = unmasked.container.querySelector('[aria-label="Flip"]')!;
-
-    fireEvent.click(flipAgain);
-    expect(onToggle).toHaveBeenCalledTimes(2);
-    expect(onNext).not.toHaveBeenCalled();
+    expect(screen.getByAltText("gengar")).toBeTruthy();
+    fireEvent.click(flip);
+    expect(screen.getByAltText("Mystery Pokémon")).toBeTruthy();
   });
 
   it("shows the description clearly once unmasked", () => {
-    const unmasked = renderCard({ masked: false });
-    const flavorEl = Array.from(unmasked.container.querySelectorAll("p")).find((p) =>
+    const { container } = renderCard();
+    fireEvent.click(screen.getByTestId("flip-card"));
+    const flavorEl = Array.from(container.querySelectorAll("p")).find((p) =>
       p.textContent?.includes("It hides in shadows")
     );
     expect(flavorEl?.textContent).toContain("It hides in shadows");
