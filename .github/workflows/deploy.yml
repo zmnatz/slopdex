@@ -19,10 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: oven-sh/bun-action@v2
+      - uses: oven-sh/setup-bun@v5
         with:
           bun-version: "latest"
-          cache: "true"
       - run: bun install --frozen-lockfile
       - run: bun run lint
 
@@ -30,10 +29,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: oven-sh/bun-action@v2
+      - uses: oven-sh/setup-bun@v5
         with:
           bun-version: "latest"
-          cache: "true"
       - run: bun install --frozen-lockfile
       - run: bun test
 
@@ -42,10 +40,9 @@ jobs:
     needs: [lint, test]
     steps:
       - uses: actions/checkout@v5
-      - uses: oven-sh/bun-action@v2
+      - uses: oven-sh/setup-bun@v5
         with:
           bun-version: "latest"
-          cache: "true"
       - run: bun install --frozen-lockfile
       - run: bun run build
       - uses: actions/upload-pages-artifact@v3
