@@ -1,7 +1,7 @@
 import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { PokemonData, SpeciesData } from "../utils/types";
 import { PokemonCard } from "./PokemonCard";
 
@@ -52,11 +52,6 @@ export function GameIdentityCard({
 }) {
   const [revealed, setRevealed] = useState(false);
   const masked = !revealed;
-  useEffect(() => {
-    if (flipping) {
-      setRevealed(false);
-    }
-  }, [flipping]);
 
   const flipAction = (
     <IconButton
@@ -79,6 +74,7 @@ export function GameIdentityCard({
         width: "100%",
         mb: 3,
         perspective: "1000px",
+        WebkitPerspective: "1000px",
         cursor: flipping ? "default" : "pointer",
       }}
       onClick={masked ? () => setRevealed(true) : onNext}
@@ -87,12 +83,23 @@ export function GameIdentityCard({
         sx={{
           position: "relative",
           transformStyle: "preserve-3d",
+          WebkitTransformStyle: "preserve-3d",
           transition: "transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1)",
+          WebkitTransition: "transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1)",
           transform: flipping ? "rotateY(180deg)" : "rotateY(0deg)",
+          WebkitTransform: flipping ? "rotateY(180deg)" : "rotateY(0deg)",
           pointerEvents: flipping ? "none" : "auto",
         }}
       >
-        <Box sx={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}>
+        <Box
+          sx={{
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+            visibility: flipping ? "hidden" : "visible",
+            WebkitVisibility: flipping ? "hidden" : "visible",
+            transition: "visibility 0s linear 0.3s, -webkit-visibility 0s linear 0.3s",
+          }}
+        >
           <PokemonCard
             pokeData={pokeData}
             speciesData={speciesData}
@@ -116,6 +123,10 @@ export function GameIdentityCard({
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
             transform: "rotateY(180deg)",
+            WebkitTransform: "rotateY(180deg)",
+            visibility: flipping ? "visible" : "hidden",
+            WebkitVisibility: flipping ? "visible" : "hidden",
+            transition: "visibility 0s linear 0.3s, -webkit-visibility 0s linear 0.3s",
           }}
         >
           <PokeBall />
