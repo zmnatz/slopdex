@@ -52,7 +52,18 @@ export function PokemonCard({
           "& .MuiCardHeader-content": { overflow: "visible" },
         }}
       />
-      <CardContent sx={{ p: 4, pt: 1, textAlign: "center", minHeight: 600, boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <CardContent
+        sx={{
+          p: 4,
+          pt: 1,
+          textAlign: "center",
+          minHeight: 600,
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}
+      >
         <Box
           sx={{
             position: "relative",

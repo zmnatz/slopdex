@@ -1,6 +1,6 @@
+import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
-import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import type { PokemonData, SpeciesData } from "../utils/types";
 import { PokemonCard } from "./PokemonCard";
 
