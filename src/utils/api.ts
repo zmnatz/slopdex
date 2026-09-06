@@ -29,6 +29,26 @@ interface TypeData {
 export const pokeApi = {
   listAll: (): Promise<PokemonListResponse> => pokemonClient.listPokemons(0, 1025),
 
+  /**
+   * Fetch an artwork image and return it as a base64 data URL, held in memory
+   * so the game card reveals instantly with no network wait. Rejects on any
+   * failure (HTTP error, empty blob, FileReader error) so React Query retries
+   * apply.
+   */
+  getArtworkBase64: async (url: string): Promise<string> => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch artwork: ${response.status}`);
+    }
+    const blob = await response.blob();
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Failed to read artwork as data URL"));
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  },
+
   // pokenode-ts's generated types are broader/more nullable than the fields
   // this app actually reads (see CONTEXT.md's Move/Game glossary entries) —
   // the facade narrows to our own domain types at this boundary.

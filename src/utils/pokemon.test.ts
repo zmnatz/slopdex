@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { gameNames, pokemonIdFromUrl, pokemonName, uniqueMoveNames } from "./pokemon";
+import {
+  gameNames,
+  getArtworkUrl,
+  pokemonIdFromUrl,
+  pokemonName,
+  uniqueMoveNames,
+} from "./pokemon";
+import type { PokemonData } from "./types";
 
 describe("pokemonIdFromUrl", () => {
   it("extracts id from PokeAPI URL", () => {
@@ -58,5 +65,35 @@ describe("gameNames", () => {
 
   it("returns empty array for no game indices", () => {
     expect(gameNames([])).toEqual([]);
+  });
+});
+
+function pokeWithSprites(official: string, fallback: string): PokemonData {
+  return {
+    name: "testmon",
+    sprites: {
+      front_default: fallback,
+      other: { "official-artwork": { front_default: official } },
+    },
+    types: [],
+    stats: [],
+    abilities: [],
+    height: 1,
+    weight: 1,
+    cries: { latest: "", legacy: "" },
+    moves: [],
+    game_indices: [],
+  };
+}
+
+describe("getArtworkUrl", () => {
+  it("prefers official artwork", () => {
+    expect(getArtworkUrl(pokeWithSprites("https://art.png", "https://sprite.png"))).toBe(
+      "https://art.png"
+    );
+  });
+
+  it("falls back to the front sprite when official artwork is missing", () => {
+    expect(getArtworkUrl(pokeWithSprites("", "https://sprite.png"))).toBe("https://sprite.png");
   });
 });

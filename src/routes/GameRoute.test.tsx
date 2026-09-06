@@ -4,20 +4,24 @@ import { renderWithRouter } from "../test-utils/renderWithRouter";
 import type { PokemonData, SpeciesData } from "../utils/types";
 import { GameRoute } from "./GameRoute";
 
-const { useGameRoundMock, buildQueueMock, refillQueueMock, usePrefetchBatchMock } = vi.hoisted(
-  () => ({
+const { useGameRoundMock, buildQueueMock, refillQueueMock, usePrefetchBatchMock, useArtworkMock } =
+  vi.hoisted(() => ({
     useGameRoundMock: vi.fn(),
     buildQueueMock: vi.fn(() => [94]),
     refillQueueMock: vi.fn(() => [25]),
     usePrefetchBatchMock: vi.fn(),
-  })
-);
+    useArtworkMock: vi.fn(() => "data:image/png;base64,QUJD"),
+  }));
 
 vi.mock("../hooks/useGameRound", () => ({
   useGameRound: useGameRoundMock,
   buildQueue: buildQueueMock,
   refillQueue: refillQueueMock,
   usePrefetchBatch: usePrefetchBatchMock,
+}));
+
+vi.mock("../hooks/useArtwork", () => ({
+  useArtwork: useArtworkMock,
 }));
 
 vi.stubGlobal(
@@ -110,5 +114,13 @@ describe("GameRoute", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("renders the card artwork from the base64 hook", async () => {
+    await renderGame();
+    expect(useArtworkMock).toHaveBeenCalledWith(94);
+    expect(screen.getByAltText("Mystery Pokémon").getAttribute("src")).toBe(
+      "data:image/png;base64,QUJD"
+    );
   });
 });

@@ -7,6 +7,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import type { ReactNode } from "react";
 import { TYPE_COLORS, TYPE_ICONS } from "../utils/constants";
+import { getArtworkUrl } from "../utils/pokemon";
 import type { PokemonData, SpeciesData } from "../utils/types";
 import { PokemonIdentity } from "./PokemonIdentity";
 
@@ -18,11 +19,13 @@ export function PokemonCard({
   speciesData,
   action,
   masked = false,
+  artworkSrc,
 }: {
   pokeData: PokemonData;
   speciesData: SpeciesData;
   action?: ReactNode;
   masked?: boolean;
+  artworkSrc?: string;
 }) {
   const genus = speciesData.genera.find((g) => g.language.name === "en")?.genus ?? "";
   const flavorText = cleanFlavor(
@@ -71,7 +74,7 @@ export function PokemonCard({
           }}
         >
           <Box sx={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}>
-            <PokemonIdentity pokeData={pokeData} />
+            <PokemonIdentity pokeData={pokeData} artworkSrc={artworkSrc} />
           </Box>
           <Box
             sx={{
@@ -88,7 +91,7 @@ export function PokemonCard({
           >
             <Box
               component="img"
-              src={pokeData.sprites.other["official-artwork"].front_default}
+              src={artworkSrc ?? getArtworkUrl(pokeData)}
               alt="Mystery Pokémon"
               sx={{
                 width: 300,
