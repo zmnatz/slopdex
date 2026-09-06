@@ -118,7 +118,27 @@ const TYPE_LIST = {
   ],
 };
 
+/**
+ * 1x1 transparent PNG served for artwork/sprite image requests so the
+ * base64 artwork path (`fetch` → blob → data URL) resolves hermetically in
+ * Storybook browser tests with no real network.
+ */
+const TINY_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+function tinyPngBuffer(): ArrayBuffer {
+  const binary = atob(TINY_PNG_BASE64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+export const artworkImageHandler = http.get("https://assets.pokemon.com/*", () =>
+  HttpResponse.arrayBuffer(tinyPngBuffer(), { headers: { "Content-Type": "image/png" } })
+);
+
 export const mswHandlers = [
+  artworkImageHandler,
   http.get("https://pokeapi.co/api/v2/type", () => HttpResponse.json(TYPE_LIST)),
   http.get("https://pokeapi.co/api/v2/pokemon/:id", ({ params }) =>
     HttpResponse.json({

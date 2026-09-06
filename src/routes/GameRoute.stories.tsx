@@ -28,3 +28,17 @@ export const PlayOneRound: Story = {
     expect(canvas.getByText("charizard")).toBeTruthy();
   },
 };
+
+export const ArtworkPrefetchedAsBase64: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const mysteryImg = (await canvas.findByAltText("Mystery Pokémon")) as HTMLImageElement;
+    // Prefetched artwork resolves to an in-memory data URL — no network wait on reveal.
+    await waitFor(() => expect(mysteryImg.getAttribute("src") ?? "").toMatch(/^data:/));
+
+    const card = await canvas.findByTestId("flip-card");
+    await userEvent.click(card);
+    const revealedImg = (await canvas.findByAltText("charizard")) as HTMLImageElement;
+    expect(revealedImg.getAttribute("src") ?? "").toMatch(/^data:/);
+  },
+};

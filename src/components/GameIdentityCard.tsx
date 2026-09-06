@@ -44,12 +44,14 @@ export function GameIdentityCard({
   pokeData,
   speciesData,
   flipping = false,
+  artworkSrc,
   onNext,
 }: {
   pokemonId: number;
   pokeData: PokemonData;
   speciesData: SpeciesData;
   flipping?: boolean;
+  artworkSrc?: string;
   onNext: () => void;
 }) {
   const [revealed, setRevealed] = useState(false);
@@ -116,6 +118,7 @@ export function GameIdentityCard({
             speciesData={speciesData}
             action={flipAction}
             masked={masked}
+            artworkSrc={artworkSrc}
           />
         </Box>
 

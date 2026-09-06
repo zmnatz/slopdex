@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { getArtworkUrl } from "../utils/pokemon";
 import type { PokemonData } from "../utils/types";
 
 /**
@@ -11,9 +12,9 @@ import type { PokemonData } from "../utils/types";
 export function PokemonIdentity({
   pokeData,
   masked = false,
-}: { pokeData: PokemonData; masked?: boolean }) {
-  const artwork =
-    pokeData.sprites.other["official-artwork"].front_default || pokeData.sprites.front_default;
+  artworkSrc,
+}: { pokeData: PokemonData; masked?: boolean; artworkSrc?: string }) {
+  const artwork = artworkSrc ?? getArtworkUrl(pokeData);
   return (
     <>
       <Box

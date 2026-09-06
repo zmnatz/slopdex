@@ -72,13 +72,17 @@ export function AppLayout() {
   // reflect this either, since there's no route loader — the suspense is
   // purely component-level. useIsFetching reads directly from the query
   // cache instead, so it's accurate regardless: true exactly while a
-  // pokemon/species/evolution request for the active Pokémon is in flight.
+  // pokemon/species/evolution/artwork request for the active Pokémon is in
+  // flight.
   const isDetailFetching =
     useIsFetching({
       predicate: (query) => {
         const [scope, key] = query.queryKey;
         return (
-          (scope === "pokemon" && key !== "list") || scope === "species" || scope === "evolution"
+          (scope === "pokemon" && key !== "list") ||
+          scope === "species" ||
+          scope === "evolution" ||
+          scope === "artwork"
         );
       },
     }) > 0;

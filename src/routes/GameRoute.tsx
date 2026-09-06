@@ -4,6 +4,7 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DetailBody, DetailCard } from "../components/DetailView";
 import { GameIdentityCard } from "../components/GameIdentityCard";
+import { useArtwork } from "../hooks/useArtwork";
 import { buildQueue, refillQueue, useGameRound, usePrefetchBatch } from "../hooks/useGameRound";
 import type { PokemonData, SpeciesData } from "../utils/types";
 
@@ -29,6 +30,12 @@ export function GameRoute() {
   const { pokeData, speciesData } = useGameRound(targetId);
 
   usePrefetchBatch(queue.slice(1, 6));
+
+  // Artwork for the displayed round: base64 data URL when the artwork query
+  // has resolved, else the raw URL. Computed at the game boundary and threaded
+  // down — the detail page never passes artworkSrc, so it keeps raw URLs.
+  const displayedId = round?.id ?? targetId;
+  const artworkSrc = useArtwork(displayedId);
 
   const drawPokemon = useCallback(() => {
     setFlipping(true);
@@ -80,6 +87,7 @@ export function GameRoute() {
             pokeData={round.pokeData}
             speciesData={round.speciesData}
             flipping={flipping}
+            artworkSrc={artworkSrc}
             onNext={drawPokemon}
           />
           <DetailCard>

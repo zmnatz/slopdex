@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { pokeApi } from "../utils/api";
+import { getArtworkUrl } from "../utils/pokemon";
 
 /**
  * Total Pokémon in the dex (matches pokeApi.listAll's cap). The game draws
@@ -9,19 +10,33 @@ import { pokeApi } from "../utils/api";
  * Prefetch a batch of Pokémon into the React Query cache without returning
  * results. Safe to call repeatedly — React Query skips already-cached keys.
  * Returns the cached data for the given IDs if available.
+ *
+ * Each id prefetches pokemon + species JSON plus the base64 artwork: the
+ * artwork query resolves its URL from the Pokémon JSON, so upcoming rounds
+ * reveal instantly with no network wait.
  */
 export function usePrefetchBatch(ids: number[]) {
   const client = useQueryClient();
   for (const id of ids) {
+    const stringId = String(id);
     client.prefetchQuery({
-      queryKey: ["pokemon", String(id)],
-      queryFn: () => pokeApi.getPokemon(String(id)),
+      queryKey: ["pokemon", stringId],
+      queryFn: () => pokeApi.getPokemon(stringId),
       staleTime: Number.POSITIVE_INFINITY,
     });
     client.prefetchQuery({
-      queryKey: ["species", String(id)],
-      queryFn: () => pokeApi.getSpecies(String(id)),
+      queryKey: ["species", stringId],
+      queryFn: () => pokeApi.getSpecies(stringId),
       staleTime: Number.POSITIVE_INFINITY,
+    });
+    client.prefetchQuery({
+      queryKey: ["artwork", stringId],
+      queryFn: async () => {
+        const pokeData = await pokeApi.getPokemon(stringId);
+        return pokeApi.getArtworkBase64(getArtworkUrl(pokeData));
+      },
+      staleTime: Number.POSITIVE_INFINITY,
+      gcTime: Number.POSITIVE_INFINITY,
     });
   }
 }
