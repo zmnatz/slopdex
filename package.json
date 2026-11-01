@@ -4,16 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "test": "vitest run",
-    "lint": "biome check .",
-    "format": "biome format --write .",
-    "lint:fix": "biome check --write .",
-    "preview": "vite preview",
-    "prepare": "husky",
+    "dev": "vp dev",
+    "build": "tsc -b && vp build",
+    "test": "vp test run",
+    "lint": "vp lint",
+    "preview": "vp preview",
+    "prepare": "vp config",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "format": "vp fmt",
+    "lint:fix": "vp lint --fix"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -30,8 +30,6 @@
     "react-error-boundary": "^6.1.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
-    "@chromatic-com/storybook": "latest",
     "@storybook/addon-a11y": "^10.6.0",
     "@storybook/addon-docs": "^10.6.0",
     "@storybook/addon-mcp": "^10.6.0",
@@ -43,21 +41,34 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
-    "@vitest/browser-playwright": "4.1.10",
-    "@vitest/coverage-v8": "4.1.10",
-    "husky": "^9.1.7",
+    "@vitest/browser-playwright": "5.0.5",
+    "@vitest/coverage-v8": "5.0.5",
     "jsdom": "^29.1.1",
     "msw": "^2.15.0",
     "msw-storybook-addon": "^3.0.0",
     "playwright": "latest",
     "storybook": "^10.6.0",
-    "typescript": "~6.0.2",
-    "vite": "^8.1.1",
-    "vitest": "^4.1.10"
+    "typescript": "^7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0",
+    "vite-plus": "1.4.0"
   },
   "msw": {
     "workerDirectory": [
       "public"
     ]
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0",
+    "vitest": "5.0.5",
+    "storybook": {
+      "vite-plus": "$vite-plus"
+    }
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "bun",
+      "version": "1.4.4",
+      "onFail": "download"
+    }
   }
 }

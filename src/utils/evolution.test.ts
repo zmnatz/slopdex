@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { flattenEvolutionChain } from "./evolution";
 
 const BASE = "https://pokeapi.co/api/v2/pokemon-species";

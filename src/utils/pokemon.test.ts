@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import {
   gameNames,
   getArtworkUrl,
@@ -89,7 +89,7 @@ function pokeWithSprites(official: string, fallback: string): PokemonData {
 describe("getArtworkUrl", () => {
   it("prefers official artwork", () => {
     expect(getArtworkUrl(pokeWithSprites("https://art.png", "https://sprite.png"))).toBe(
-      "https://art.png"
+      "https://art.png",
     );
   });
 

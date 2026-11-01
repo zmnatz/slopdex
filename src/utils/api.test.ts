@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { pokeApi } from "./api";
 
 function mockFetch(ok: boolean, status = 200) {
   const blob = new Blob(["fake-image-bytes"], { type: "image/png" });
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () => ({ ok, status, blob: async () => blob }) as Response)
+    vi.fn(async () => ({ ok, status, blob: async () => blob }) as Response),
   );
 }
 
@@ -38,7 +38,7 @@ describe("getArtworkBase64", () => {
     mockFetch(true);
     vi.stubGlobal("FileReader", SuccessReader);
     await expect(pokeApi.getArtworkBase64("https://example.com/art.png")).resolves.toBe(
-      "data:image/png;base64,ZmFrZS1pbWFnZQ=="
+      "data:image/png;base64,ZmFrZS1pbWFnZQ==",
     );
     expect(fetch).toHaveBeenCalledWith("https://example.com/art.png");
   });
@@ -47,7 +47,7 @@ describe("getArtworkBase64", () => {
     mockFetch(false, 404);
     vi.stubGlobal("FileReader", SuccessReader);
     await expect(pokeApi.getArtworkBase64("https://example.com/art.png")).rejects.toThrow(
-      "Failed to fetch artwork: 404"
+      "Failed to fetch artwork: 404",
     );
   });
 
@@ -55,7 +55,7 @@ describe("getArtworkBase64", () => {
     mockFetch(true);
     vi.stubGlobal("FileReader", FailureReader);
     await expect(pokeApi.getArtworkBase64("https://example.com/art.png")).rejects.toThrow(
-      "Failed to read artwork as data URL"
+      "Failed to read artwork as data URL",
     );
   });
 });

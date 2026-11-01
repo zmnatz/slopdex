@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { theme } from "../theme";
 import { MovesModal } from "./MovesModal";
 
@@ -14,7 +14,7 @@ function renderModal(onClose: () => void) {
   return render(
     <ThemeProvider theme={theme}>
       <MovesModal moves={moves} onClose={onClose} />
-    </ThemeProvider>
+    </ThemeProvider>,
   );
 }
 

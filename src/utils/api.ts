@@ -1,10 +1,16 @@
+import { buildMemoryStorage } from "axios-cache-interceptor";
 import { EvolutionClient, PokemonClient } from "pokenode-ts";
 import { pokemonIdFromUrl } from "./pokemon";
 import type { EvolutionChain, PokemonData, SpeciesData } from "./types";
 
 // PokeAPI data is effectively static within a session; cache aggressively
 // so revisiting a type filter or re-navigating doesn't re-hit the network.
-const CACHE_OPTIONS = { ttl: 1000 * 60 * 30 };
+// Both clients share one store so the whole cache can be dropped at once.
+const cacheStorage = buildMemoryStorage();
+const CACHE_OPTIONS = { ttl: 1000 * 60 * 30, storage: cacheStorage };
+
+/** Drop every cached PokeAPI response (used by stories to reach failure paths). */
+export const clearPokeApiCache = () => cacheStorage.clear?.();
 
 const pokemonClient = new PokemonClient({ cacheOptions: CACHE_OPTIONS });
 const evolutionClient = new EvolutionClient({ cacheOptions: CACHE_OPTIONS });

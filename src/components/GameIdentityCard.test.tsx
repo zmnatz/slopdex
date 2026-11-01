@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import type { PokemonData, SpeciesData } from "../utils/types";
 import { GameIdentityCard } from "./GameIdentityCard";
 
@@ -36,7 +36,7 @@ function renderCard(props?: { pokemonId?: number; flipping?: boolean; onNext?: (
       speciesData={mockSpecies}
       onNext={() => {}}
       {...props}
-    />
+    />,
   );
 }
 
@@ -90,7 +90,7 @@ describe("GameIdentityCard", () => {
     const { container } = renderCard();
     fireEvent.click(screen.getByTestId("flip-card"));
     const flavorEl = Array.from(container.querySelectorAll("p")).find((p) =>
-      p.textContent?.includes("It hides in shadows")
+      p.textContent?.includes("It hides in shadows"),
     );
     expect(flavorEl?.textContent).toContain("It hides in shadows");
     expect((flavorEl as HTMLElement).style.filter).not.toContain("blur");

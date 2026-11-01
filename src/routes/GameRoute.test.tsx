@@ -1,5 +1,5 @@
 import { act, fireEvent, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { renderWithRouter } from "../test-utils/renderWithRouter";
 import type { PokemonData, SpeciesData } from "../utils/types";
 import { GameRoute } from "./GameRoute";
@@ -31,7 +31,7 @@ vi.stubGlobal(
     play() {
       return Promise.resolve();
     }
-  }
+  },
 );
 
 const mockPokemon: PokemonData = {
@@ -120,7 +120,7 @@ describe("GameRoute", () => {
     await renderGame();
     expect(useArtworkMock).toHaveBeenCalledWith(94);
     expect(screen.getByAltText("Mystery Pokémon").getAttribute("src")).toBe(
-      "data:image/png;base64,QUJD"
+      "data:image/png;base64,QUJD",
     );
   });
 });
