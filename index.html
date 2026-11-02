@@ -18,22 +18,22 @@
       // createRouter() in src/router.tsx captures the initial URL at module
       // import time, so the rewrite must happen first.
       (function () {
-        var key = 'slopdex:redirect'
+        var key = "slopdex:redirect";
         try {
-          var redirect = sessionStorage.getItem(key)
+          var redirect = sessionStorage.getItem(key);
           if (redirect) {
-            sessionStorage.removeItem(key)
+            sessionStorage.removeItem(key);
             if (redirect !== location.href) {
-              var url = new URL(redirect, location.origin)
+              var url = new URL(redirect, location.origin);
               if (url.origin === location.origin) {
-                history.replaceState(null, '', url.pathname + url.search + url.hash)
+                history.replaceState(null, "", url.pathname + url.search + url.hash);
               }
             }
           }
         } catch (e) {
           // Ignore — the app simply opens at its root.
         }
-      })()
+      })();
     </script>
   </head>
   <body>

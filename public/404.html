@@ -14,14 +14,14 @@
       // so the deep-linked Pokémon still renders (and the link keeps working).
       (function () {
         // Base of this project site, derived from the URL (e.g. /slopdex/).
-        var root = '/' + (location.pathname.split('/')[1] || '') + '/'
+        var root = "/" + (location.pathname.split("/")[1] || "") + "/";
         try {
-          sessionStorage.setItem('slopdex:redirect', location.href)
+          sessionStorage.setItem("slopdex:redirect", location.href);
         } catch (e) {
           // sessionStorage unavailable — still land on the app root below.
         }
-        location.replace(root)
-      })()
+        location.replace(root);
+      })();
     </script>
     <noscript>
       <meta http-equiv="refresh" content="0;url=/slopdex/" />

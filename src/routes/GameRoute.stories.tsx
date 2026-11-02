@@ -23,7 +23,7 @@ export const PlayOneRound: Story = {
     await userEvent.click(card);
 
     await waitFor(() =>
-      expect(window.getComputedStyle(canvas.getByText(/Spits fire/)).filter).not.toContain("blur")
+      expect(window.getComputedStyle(canvas.getByText(/Spits fire/)).filter).not.toContain("blur"),
     );
     expect(canvas.getByText("charizard")).toBeTruthy();
   },

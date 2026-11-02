@@ -1,3 +1,4 @@
+vp fmt --check
 vp lint
 vp run build
 vp test run

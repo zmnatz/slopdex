@@ -1,20 +1,17 @@
-import type { StorybookConfig } from '@storybook/tanstack-react';
+import type { StorybookConfig } from "@storybook/tanstack-react";
 
 const config: StorybookConfig = {
-  "stories": [
-    "../src/**/*.mdx",
-    "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"
-  ],
-  "addons": [
+  stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
+  addons: [
     "@storybook/addon-vitest",
     "@storybook/addon-a11y",
     "@storybook/addon-docs",
-    "@storybook/addon-mcp"
+    "@storybook/addon-mcp",
   ],
-  "framework": "@storybook/tanstack-react",
-  "staticDirs": ["../public"],
-  "features": {
-    "componentsManifest": true
-  }
+  framework: "@storybook/tanstack-react",
+  staticDirs: ["../public"],
+  features: {
+    componentsManifest: true,
+  },
 };
 export default config;

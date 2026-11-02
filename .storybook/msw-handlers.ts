@@ -20,7 +20,11 @@ function artworkUrl(id: number) {
   return `${ARTWORK_ROOT}/full/${String(id).padStart(3, "0")}.png`;
 }
 
-function makePokedata(id: number, name: string, types: { slot: number; name: string }[]): PokemonData {
+function makePokedata(
+  id: number,
+  name: string,
+  types: { slot: number; name: string }[],
+): PokemonData {
   return {
     name,
     sprites: {
@@ -60,7 +64,7 @@ function makePokedata(id: number, name: string, types: { slot: number; name: str
 function makeSpecies(
   name: { common: string; genus: string; flavor: string },
   generation: string,
-  chainId: number
+  chainId: number,
 ): SpeciesData {
   return {
     generation: { name: generation },
@@ -88,9 +92,13 @@ export const MOCK_POKEMON: MockPokemon[] = [
     name: "bulbasaur",
     types: [{ slot: 1, name: "grass" }],
     species: makeSpecies(
-      { common: "bulbasaur", genus: "Seed Pokémon", flavor: "A strange seed was planted on its back at birth." },
+      {
+        common: "bulbasaur",
+        genus: "Seed Pokémon",
+        flavor: "A strange seed was planted on its back at birth.",
+      },
       "generation-i",
-      1
+      1,
     ),
     pokeData: makePokedata(1, "bulbasaur", [{ slot: 1, name: "grass" }]),
   },
@@ -99,9 +107,13 @@ export const MOCK_POKEMON: MockPokemon[] = [
     name: "charmander",
     types: [{ slot: 1, name: "fire" }],
     species: makeSpecies(
-      { common: "charmander", genus: "Lizard Pokémon", flavor: "The flame on its tail shows the strength of its life force." },
+      {
+        common: "charmander",
+        genus: "Lizard Pokémon",
+        flavor: "The flame on its tail shows the strength of its life force.",
+      },
       "generation-i",
-      2
+      2,
     ),
     pokeData: {
       ...makePokedata(4, "charmander", [{ slot: 1, name: "fire" }]),
@@ -135,9 +147,13 @@ export const MOCK_POKEMON: MockPokemon[] = [
       { slot: 2, name: "flying" },
     ],
     species: makeSpecies(
-      { common: "charizard", genus: "Flame Pokémon", flavor: "Spits fire that is hot enough to melt boulders." },
+      {
+        common: "charizard",
+        genus: "Flame Pokémon",
+        flavor: "Spits fire that is hot enough to melt boulders.",
+      },
       "generation-i",
-      2
+      2,
     ),
     pokeData: {
       ...makePokedata(6, "charizard", [
@@ -171,9 +187,14 @@ export const MOCK_POKEMON: MockPokemon[] = [
     name: "pikachu",
     types: [{ slot: 1, name: "electric" }],
     species: makeSpecies(
-      { common: "pikachu", genus: "Mouse Pokémon", flavor: "When several of these POKéMON gather, their electricity could build and cause lightning storms." },
+      {
+        common: "pikachu",
+        genus: "Mouse Pokémon",
+        flavor:
+          "When several of these POKéMON gather, their electricity could build and cause lightning storms.",
+      },
       "generation-i",
-      1
+      1,
     ),
     pokeData: makePokedata(25, "pikachu", [{ slot: 1, name: "electric" }]),
   },
@@ -182,9 +203,13 @@ export const MOCK_POKEMON: MockPokemon[] = [
     name: "chikorita",
     types: [{ slot: 1, name: "grass" }],
     species: makeSpecies(
-      { common: "chikorita", genus: "Leaf Pokémon", flavor: "It uses the leaf on its head to determine the temperature and humidity." },
+      {
+        common: "chikorita",
+        genus: "Leaf Pokémon",
+        flavor: "It uses the leaf on its head to determine the temperature and humidity.",
+      },
       "generation-ii",
-      3
+      3,
     ),
     pokeData: makePokedata(152, "chikorita", [{ slot: 1, name: "grass" }]),
   },
@@ -193,9 +218,14 @@ export const MOCK_POKEMON: MockPokemon[] = [
     name: "cyndaquil",
     types: [{ slot: 1, name: "fire" }],
     species: makeSpecies(
-      { common: "cyndaquil", genus: "Fire Mouse Pokémon", flavor: "It has a timid nature. If it is startled, the flames on its back burn more vigorously." },
+      {
+        common: "cyndaquil",
+        genus: "Fire Mouse Pokémon",
+        flavor:
+          "It has a timid nature. If it is startled, the flames on its back burn more vigorously.",
+      },
       "generation-ii",
-      3
+      3,
     ),
     pokeData: makePokedata(155, "cyndaquil", [{ slot: 1, name: "fire" }]),
   },
@@ -332,18 +362,21 @@ export const pokemonListHandler = http.get("https://pokeapi.co/api/v2/pokemon", 
       name: p.name,
       url: `https://pokeapi.co/api/v2/pokemon/${p.id}/`,
     })),
-  })
+  }),
 );
 
 /** `/pokemon/:id` that echoes the requested id into the mock's data. */
-export const pokemonByIdHandler = http.get("https://pokeapi.co/api/v2/pokemon/:id", ({ params }) => {
-  const found = POKEMON_BY_ID.get(params.id as string);
-  const source = found ?? POKEMON_BY_NAME.get("charizard")!;
-  return HttpResponse.json({
-    ...source.pokeData,
-    id: Number(params.id),
-  });
-});
+export const pokemonByIdHandler = http.get(
+  "https://pokeapi.co/api/v2/pokemon/:id",
+  ({ params }) => {
+    const found = POKEMON_BY_ID.get(params.id as string);
+    const source = found ?? POKEMON_BY_NAME.get("charizard")!;
+    return HttpResponse.json({
+      ...source.pokeData,
+      id: Number(params.id),
+    });
+  },
+);
 
 export const pokemonSpeciesHandler = http.get(
   "https://pokeapi.co/api/v2/pokemon-species/:id",
@@ -354,7 +387,7 @@ export const pokemonSpeciesHandler = http.get(
       ...source.species,
       id: Number(params.id),
     });
-  }
+  },
 );
 
 export const evolutionChainHandler = http.get(
@@ -362,11 +395,11 @@ export const evolutionChainHandler = http.get(
   ({ params }) => {
     const chain = EVOLUTION_CHAINS[params.id as string] ?? EVOLUTION_CHAINS["2"];
     return HttpResponse.json(chain);
-  }
+  },
 );
 
 export const typeListHandler = http.get("https://pokeapi.co/api/v2/type", () =>
-  HttpResponse.json(TYPE_LIST)
+  HttpResponse.json(TYPE_LIST),
 );
 
 export const typeByIdHandler = http.get("https://pokeapi.co/api/v2/type/:name", ({ params }) => {

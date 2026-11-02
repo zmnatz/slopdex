@@ -13,7 +13,11 @@ export function PokemonIdentity({
   pokeData,
   masked = false,
   artworkSrc,
-}: { pokeData: PokemonData; masked?: boolean; artworkSrc?: string }) {
+}: {
+  pokeData: PokemonData;
+  masked?: boolean;
+  artworkSrc?: string;
+}) {
   const artwork = artworkSrc ?? getArtworkUrl(pokeData);
   return (
     <>

@@ -29,7 +29,7 @@ export function applyGenFilter(list: PokemonItem[], genFilter: string): PokemonI
 export function applyTypeFilter(
   list: PokemonItem[],
   typeFilter: string,
-  typeUrls: Set<string> | undefined
+  typeUrls: Set<string> | undefined,
 ): PokemonItem[] {
   if (typeFilter === "all" || !typeUrls) return list;
   return list.filter((p) => typeUrls.has(p.url));

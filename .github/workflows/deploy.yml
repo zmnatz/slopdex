@@ -23,6 +23,7 @@ jobs:
         with:
           node-version: "24"
           cache: true
+      - run: vp fmt --check
       - run: vp lint
 
   test:

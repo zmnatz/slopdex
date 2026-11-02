@@ -18,7 +18,10 @@ import { PokemonDetailRoute } from "../routes/PokemonDetailRoute";
 export function AppPage({
   children,
   initialEntry,
-}: { children: ReactNode; initialEntry?: string }) {
+}: {
+  children: ReactNode;
+  initialEntry?: string;
+}) {
   const contentRef = useRef<ReactNode>(children);
   useLayoutEffect(() => {
     contentRef.current = children;
@@ -44,7 +47,7 @@ export function AppPage({
 /** An `AppLayout`-rooted router that renders `content` at "/". */
 function createAppPageRouter(
   content: () => ReactNode,
-  initialEntry = "/"
+  initialEntry = "/",
 ): ReturnType<typeof createRouter> {
   const rootRoute = createRootRoute({
     component: AppLayout,

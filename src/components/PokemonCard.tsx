@@ -29,7 +29,7 @@ export function PokemonCard({
 }) {
   const genus = speciesData.genera.find((g) => g.language.name === "en")?.genus ?? "";
   const flavorText = cleanFlavor(
-    speciesData.flavor_text_entries.find((f) => f.language.name === "en")?.flavor_text ?? ""
+    speciesData.flavor_text_entries.find((f) => f.language.name === "en")?.flavor_text ?? "",
   );
 
   return (

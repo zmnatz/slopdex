@@ -66,7 +66,7 @@ export const pokeApi = {
 
   getEvolutionChain: (url: string) =>
     evolutionClient.getEvolutionChainById(
-      Number(pokemonIdFromUrl(url))
+      Number(pokemonIdFromUrl(url)),
     ) as unknown as Promise<EvolutionChain>,
 
   getTypeList: (): Promise<TypeListResponse> => pokemonClient.listTypes(0, 100),

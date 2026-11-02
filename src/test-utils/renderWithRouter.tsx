@@ -51,7 +51,7 @@ export async function renderWithRouter(ui: ReactNode, initialPath = "/") {
       <ThemeProvider theme={theme}>
         <RouterProvider router={router} />
       </ThemeProvider>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 
   return { ...result, router };

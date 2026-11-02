@@ -109,7 +109,7 @@ export const Sidebar = memo(function Sidebar({
           return id >= gen.start && id <= gen.end;
         }),
       })).filter((g) => g.pokemon.length > 0),
-    [filteredPokemon]
+    [filteredPokemon],
   );
 
   const content = (

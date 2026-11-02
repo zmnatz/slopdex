@@ -1,7 +1,7 @@
 {
   "name": "slopdex",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vp dev",
@@ -52,17 +52,12 @@
     "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0",
     "vite-plus": "1.4.0"
   },
-  "msw": {
-    "workerDirectory": [
-      "public"
-    ]
-  },
   "overrides": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0",
-    "vitest": "5.0.5",
     "storybook": {
       "vite-plus": "$vite-plus"
-    }
+    },
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0",
+    "vitest": "5.0.5"
   },
   "devEngines": {
     "packageManager": {
@@ -70,5 +65,10 @@
       "version": "1.4.4",
       "onFail": "download"
     }
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }
