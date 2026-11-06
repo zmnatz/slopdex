@@ -6,20 +6,13 @@ import { DetailBody, DetailCard } from "../components/DetailView";
 import { GameIdentityCard } from "../components/GameIdentityCard";
 import { useArtwork } from "../hooks/useArtwork";
 import { buildQueue, refillQueue, useGameRound, usePrefetchBatch } from "../hooks/useGameRound";
+import { playCry } from "../utils/cry";
 import type { PokemonData, SpeciesData } from "../utils/types";
 
 interface Round {
   id: number;
   pokeData: PokemonData;
   speciesData: SpeciesData;
-}
-
-function playCry(pokeData: PokemonData) {
-  const src = pokeData.cries.latest || pokeData.cries.legacy;
-  if (!src) return;
-  const audio = new Audio(src);
-  audio.volume = 0.3;
-  void audio.play();
 }
 
 export function GameRoute() {

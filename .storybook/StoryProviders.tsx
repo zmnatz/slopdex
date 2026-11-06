@@ -39,7 +39,12 @@ function createStoryRouter() {
     path: "/game",
     component: () => null,
   });
-  const routeTree = rootRoute.addChildren([indexRoute, pokemonRoute, gameRoute]);
+  const memoryRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/memory",
+    component: () => null,
+  });
+  const routeTree = rootRoute.addChildren([indexRoute, pokemonRoute, gameRoute, memoryRoute]);
   return createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: ["/"] }),

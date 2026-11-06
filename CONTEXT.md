@@ -28,7 +28,7 @@ An attack or technique a Pokémon can learn, sourced from `pokemon.moves[].move`
 
 ### Game
 
-An individual game title a Pokémon appears in (e.g. `red`, `gold`, `scarlet`), sourced from `pokemon.game_indices[].version`. Distinct from a **version group** (a paired release sharing move-learn data, e.g. `red-blue`) — the app uses `game_indices`, not `moves[].version_group_details`, as the source of truth for "games this Pokémon appears in," since that's the field PokeAPI purpose-built for dex presence. Never used for the app's own player-facing activity — see **Who's That Pokémon?**.
+An individual game title a Pokémon appears in (e.g. `red`, `gold`, `scarlet`), sourced from `pokemon.game_indices[].version`. Distinct from a **version group** (a paired release sharing move-learn data, e.g. `red-blue`) — the app uses `game_indices`, not `moves[].version_group_details`, as the source of truth for "games this Pokémon appears in," since that's the field PokeAPI purpose-built for dex presence. Never used for the app's own player-facing activity — see **Who's That Pokémon?** and **Memory Match**.
 
 ### Round
 
@@ -37,6 +37,18 @@ In **Who's That Pokémon?**, one draw→reveal cycle: a random Pokémon is drawn
 ### Who's That Pokémon?
 
 A round-based activity in the app. Each **Round** shows a random Pokémon's full card with its **identity obscured** — the name rendered as `???` and the artwork as a silhouette — while the rest of the card's information (stats, types, height, weight, base XP, abilities, moves, games, generation, genus, flavour text) and an auto-played cry remain visible as clues. Clicking the card flips it to **reveal** the identity (name + official artwork). Guessing happens among people in the real world: the app never accepts a guess input nor scores one.
+
+### Memory Match
+
+A timed matching activity in the app, separate from **Who's That Pokémon?**. The player flips cards two at a time to find every **Pair** on a **Board**. There is no time limit and no way to lose: play continues until every Pair is matched. The elapsed time, from pressing Start to the final match, is the only score, and it is not kept after the Board ends. Cards show only a Pokémon's artwork, never its name or types.
+
+### Board
+
+In **Memory Match**, one deal of shuffled face-down cards. Each Pokémon on a Board appears exactly twice, as one **Pair**. Its Pokémon are drawn at random from all 1025, unaffected by the sidebar's filters. Playing again deals a new Board.
+
+### Pair
+
+Two cards on a **Board** showing the same Pokémon. A Pair flipped together is matched and stays face up. Two flipped cards that are not a Pair are a mismatch, and both flip back face down.
 
 ## Architecture vocabulary
 

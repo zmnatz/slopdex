@@ -38,7 +38,12 @@ export async function renderWithRouter(ui: ReactNode, initialPath = "/") {
     path: "/game",
     component: () => null,
   });
-  const routeTree = rootRoute.addChildren([indexRoute, pokemonRoute, gameRoute]);
+  const memoryRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/memory",
+    component: () => null,
+  });
+  const routeTree = rootRoute.addChildren([indexRoute, pokemonRoute, gameRoute, memoryRoute]);
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [initialPath] }),

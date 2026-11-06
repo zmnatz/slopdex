@@ -22,6 +22,10 @@ export function IndexRoute() {
         or{" "}
         <Link to="/game" style={{ color: "#1976d2" }}>
           play the Who's That Pokémon? game
+        </Link>{" "}
+        or{" "}
+        <Link to="/memory" style={{ color: "#1976d2" }}>
+          Memory Match
         </Link>
       </Typography>
     </Box>

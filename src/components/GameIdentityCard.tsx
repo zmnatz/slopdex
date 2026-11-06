@@ -3,37 +3,8 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import { useEffect, useRef, useState } from "react";
 import type { PokemonData, SpeciesData } from "../utils/types";
+import { PokeBall } from "./PokeBall";
 import { PokemonCard } from "./PokemonCard";
-
-function PokeBall() {
-  return (
-    <Box sx={{ position: "relative", width: 140, height: 140 }}>
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: "50%",
-          background:
-            "linear-gradient(to bottom, #ee1515 0 49.4%, #222 49.4% 50.6%, #fff 50.6% 100%)",
-          boxShadow: "0 0 0 10px #222",
-        }}
-      />
-      <Box
-        sx={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          width: 40,
-          height: 40,
-          transform: "translate(-50%, -50%)",
-          borderRadius: "50%",
-          bgcolor: "#fff",
-          border: "8px solid #222",
-        }}
-      />
-    </Box>
-  );
-}
 
 /**
  * The Who's That Pokémon? card. Wraps `PokemonCard` in a full-card flip shell
