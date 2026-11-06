@@ -49,25 +49,36 @@ function createAppPageRouter(
   content: () => ReactNode,
   initialEntry = "/",
 ): ReturnType<typeof createRouter> {
-  const rootRoute = createRootRoute({
+  const rootRoute = createRootRoute();
+  const appLayoutRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    id: "app",
     component: AppLayout,
   });
   const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
+    getParentRoute: () => appLayoutRoute,
     path: "/",
     component: () => <>{content()}</>,
   });
   const pokemonRoute = createRoute({
-    getParentRoute: () => rootRoute,
+    getParentRoute: () => appLayoutRoute,
     path: "/pokemon/$id",
     component: PokemonDetailRoute,
   });
   const gameRoute = createRoute({
-    getParentRoute: () => rootRoute,
+    getParentRoute: () => appLayoutRoute,
     path: "/game",
     component: () => null,
   });
-  const routeTree = rootRoute.addChildren([indexRoute, pokemonRoute, gameRoute]);
+  const memoryRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/memory",
+    component: () => null,
+  });
+  const routeTree = rootRoute.addChildren([
+    appLayoutRoute.addChildren([indexRoute, pokemonRoute, gameRoute]),
+    memoryRoute,
+  ]);
   return createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [initialEntry] }),

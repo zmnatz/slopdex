@@ -1,4 +1,5 @@
 import ButtonBase from "@mui/material/ButtonBase";
+import IconButton from "@mui/material/IconButton";
 import ListItemButton from "@mui/material/ListItemButton";
 import { createLink } from "@tanstack/react-router";
 
@@ -8,3 +9,4 @@ import { createLink } from "@tanstack/react-router";
 // adapter for wrapping an arbitrary component as a typed Link.
 export const LinkedListItemButton = createLink(ListItemButton);
 export const LinkedButtonBase = createLink(ButtonBase);
+export const LinkedIconButton = createLink(IconButton);

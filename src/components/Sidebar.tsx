@@ -1,4 +1,5 @@
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import GridViewRoundedIcon from "@mui/icons-material/GridViewRounded";
 import QuizIcon from "@mui/icons-material/Quiz";
 import SearchIcon from "@mui/icons-material/Search";
 import Accordion from "@mui/material/Accordion";
@@ -83,6 +84,22 @@ const PokemonRow = memo(function PokemonRow({ id, name, active, onNavigate }: Po
   );
 });
 
+const ACTIVITY_LINK_SX = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 1,
+  bgcolor: "secondary.main",
+  color: "secondary.contrastText",
+  borderRadius: 1.5,
+  py: 1,
+  px: 1.5,
+  fontWeight: "bold",
+  textTransform: "uppercase",
+  fontSize: 14,
+  "&:hover": { bgcolor: "secondary.dark" },
+} as const;
+
 /**
  * Memoized because App re-renders on every fetch-status change while a
  * Pokémon's detail data loads; without this, each of those transitions
@@ -133,26 +150,13 @@ export const Sidebar = memo(function Sidebar({
         </Typography>
       </Box>
       <Box sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 1.5 }}>
-        <LinkedButtonBase
-          to="/game"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 1,
-            bgcolor: "secondary.main",
-            color: "secondary.contrastText",
-            borderRadius: 1.5,
-            py: 1,
-            px: 1.5,
-            fontWeight: "bold",
-            textTransform: "uppercase",
-            fontSize: 14,
-            "&:hover": { bgcolor: "secondary.dark" },
-          }}
-        >
+        <LinkedButtonBase to="/game" sx={ACTIVITY_LINK_SX}>
           <QuizIcon fontSize="small" />
           Who&apos;s That Pokémon?
+        </LinkedButtonBase>
+        <LinkedButtonBase to="/memory" sx={ACTIVITY_LINK_SX}>
+          <GridViewRoundedIcon fontSize="small" />
+          Memory Match
         </LinkedButtonBase>
         <TextField
           placeholder="Search all generations..."
