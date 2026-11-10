@@ -44,6 +44,8 @@ export interface Board extends Grid {
   orientation: DealOrientation;
 }
 
+export type PlayerCount = 1 | 2;
+
 export type Phase = "ready" | "playing" | "finished";
 
 export interface GameState {
@@ -52,6 +54,14 @@ export interface GameState {
   /** Indexes into `board.cards` of the unresolved face-up cards (at most two). */
   flipped: number[];
   matchedIds: number[];
+  /** One player (timed solo play) or two (taking turns, scoring Pairs). */
+  players: PlayerCount;
+  /** Index (0 or 1) of the player whose turn it is. Always 0 in solo play. */
+  currentPlayer: number;
+  /** Pairs matched by each player; index = player. */
+  scores: number[];
+  /** Which player matched each Pokémon (keyed by id), for coloring matches. */
+  matchedBy: Record<number, number>;
   startedAt: number | null;
   finishedAt: number | null;
 }
@@ -59,7 +69,8 @@ export interface GameState {
 export type GameAction =
   | { type: "start"; now: number }
   | { type: "flip"; index: number; now: number }
-  | { type: "settleMismatch" };
+  | { type: "settleMismatch" }
+  | { type: "setPlayers"; players: PlayerCount };
 
 export function shuffle<T>(items: readonly T[]): T[] {
   const result = [...items];
@@ -116,8 +127,25 @@ export function dealBoard(
   return { ...grid, cards: shuffle(cards), orientation };
 }
 
-export function newGame(board: Board): GameState {
-  return { board, phase: "ready", flipped: [], matchedIds: [], startedAt: null, finishedAt: null };
+export function newGame(board: Board, players: PlayerCount = 1): GameState {
+  return {
+    board,
+    phase: "ready",
+    flipped: [],
+    matchedIds: [],
+    players,
+    currentPlayer: 0,
+    scores: Array.from({ length: players }, () => 0),
+    matchedBy: {},
+    startedAt: null,
+    finishedAt: null,
+  };
+}
+
+/** The player(s) with the highest score: one winner, or several on a tie. */
+export function winners(state: GameState): number[] {
+  const best = Math.max(...state.scores);
+  return state.scores.flatMap((score, player) => (score === best ? [player] : []));
 }
 
 export function canFlip(state: GameState, index: number): boolean {
@@ -143,19 +171,34 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const [first, second] = flipped.map((i) => state.board.cards[i].pokemon.id);
       if (first !== second) return { ...state, flipped };
 
+      // A player who finds a Pair keeps the turn.
       const matchedIds = [...state.matchedIds, first];
+      const scores = state.scores.map((score, player) =>
+        player === state.currentPlayer ? score + 1 : score,
+      );
       const finished = matchedIds.length * 2 === state.board.cards.length;
       return {
         ...state,
         flipped: [],
         matchedIds,
+        scores,
+        matchedBy: { ...state.matchedBy, [first]: state.currentPlayer },
         phase: finished ? "finished" : "playing",
         finishedAt: finished ? action.now : null,
       };
     }
 
     case "settleMismatch":
-      return state.flipped.length === 2 ? { ...state, flipped: [] } : state;
+      if (state.flipped.length !== 2) return state;
+      return {
+        ...state,
+        flipped: [],
+        currentPlayer: (state.currentPlayer + 1) % state.players,
+      };
+
+    case "setPlayers":
+      if (state.phase !== "ready") return state;
+      return newGame(state.board, action.players);
   }
 }
 

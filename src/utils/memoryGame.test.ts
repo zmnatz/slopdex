@@ -12,6 +12,8 @@ import {
   quarterTurns,
   type GameState,
   type MemoryPokemon,
+  type PlayerCount,
+  winners,
 } from "./memoryGame";
 import type { PokemonData } from "./types";
 
@@ -23,14 +25,14 @@ const pokemon = (id: number): MemoryPokemon => ({
 });
 const upright = { angle: 0, landscape: true };
 
-function gameWith(ids: number[]): GameState {
+function gameWith(ids: number[], players: PlayerCount = 1): GameState {
   const board = dealBoard(ids.map(pokemon), { cols: ids.length, rows: 2 }, upright);
   // Unshuffled so tests can address cards directly: [a, a, b, b, ...].
   board.cards = ids.flatMap((id) => [
     { key: `${id}-a`, pokemon: pokemon(id) },
     { key: `${id}-b`, pokemon: pokemon(id) },
   ]);
-  return gameReducer(newGame(board), { type: "start", now: 1000 });
+  return gameReducer(newGame(board, players), { type: "start", now: 1000 });
 }
 const flip = (state: GameState, index: number, now = 2000) =>
   gameReducer(state, { type: "flip", index, now });
@@ -125,6 +127,54 @@ describe("gameReducer", () => {
     state = flip(flip(state, 2), 3, 9000);
     expect(state.phase).toBe("finished");
     expect(state.finishedAt).toBe(9000);
+  });
+});
+
+describe("two-player game", () => {
+  const settle = (state: GameState) => gameReducer(state, { type: "settleMismatch" });
+
+  it("starts with player 1 and zero scores", () => {
+    const state = gameWith([1, 2], 2);
+    expect(state.currentPlayer).toBe(0);
+    expect(state.scores).toEqual([0, 0]);
+  });
+
+  it("passes the turn after a mismatch, back and forth", () => {
+    let state = settle(flip(flip(gameWith([1, 2, 3], 2), 0), 2));
+    expect(state.currentPlayer).toBe(1);
+    state = settle(flip(flip(state, 0), 2));
+    expect(state.currentPlayer).toBe(0);
+  });
+
+  it("scores a match for the current player, records who matched, and keeps their turn", () => {
+    let state = settle(flip(flip(gameWith([1, 2, 3], 2), 0), 2)); // P2's turn
+    state = flip(flip(state, 0), 1);
+    expect(state.scores).toEqual([0, 1]);
+    expect(state.matchedBy).toEqual({ 1: 1 });
+    expect(state.currentPlayer).toBe(1);
+  });
+
+  it("finishes with the higher score as the winner, or both on a tie", () => {
+    let state = flip(flip(gameWith([1, 2, 3], 2), 0), 1);
+    state = flip(flip(state, 2), 3);
+    state = flip(flip(state, 4), 5);
+    expect(state.phase).toBe("finished");
+    expect(state.scores).toEqual([3, 0]);
+    expect(winners(state)).toEqual([0]);
+    expect(winners({ ...state, scores: [2, 2] })).toEqual([0, 1]);
+  });
+
+  it("only changes the player count before the game starts", () => {
+    const board = dealBoard([pokemon(1), pokemon(2)], { cols: 2, rows: 2 }, upright);
+    const ready = gameReducer(newGame(board), { type: "setPlayers", players: 2 });
+    expect(ready.players).toBe(2);
+    expect(ready.scores).toEqual([0, 0]);
+    const playing = gameReducer(ready, { type: "start", now: 1 });
+    expect(gameReducer(playing, { type: "setPlayers", players: 1 })).toBe(playing);
+  });
+
+  it("does not switch turns in solo play", () => {
+    expect(settle(flip(flip(gameWith([1, 2, 3]), 0), 2)).currentPlayer).toBe(0);
   });
 });
 
