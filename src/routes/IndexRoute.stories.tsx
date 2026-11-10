@@ -138,6 +138,8 @@ export const HomeDetailError: Story = {
     await userEvent.click(charizardLink);
 
     await shell.findByText("Failed to load Pokémon data.");
-    expect(shell.getByRole("button", { name: "Try again" })).toBeTruthy();
+    // The sidebar drawer is still closing and aria-hides the shell, so wait for
+    // the button to become accessible rather than asserting immediately.
+    expect(await shell.findByRole("button", { name: "Try again" })).toBeTruthy();
   },
 };
