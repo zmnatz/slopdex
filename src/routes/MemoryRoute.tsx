@@ -5,6 +5,8 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Fade from "@mui/material/Fade";
 import Paper from "@mui/material/Paper";
 import Slider from "@mui/material/Slider";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { MemoryCard } from "../components/MemoryCard";
@@ -19,10 +21,58 @@ import {
   defaultCardSize,
   formatElapsed,
   type GameState,
+  type PlayerCount,
   MAX_CARD_SIZE,
   MIN_CARD_SIZE,
   quarterTurns,
+  winners,
 } from "../utils/memoryGame";
+
+const SOLO_MATCH_COLOR = "#43a047";
+const PLAYER_COLORS = ["#1e88e5", "#fb8c00"];
+const playerName = (player: number) => `Player ${player + 1}`;
+
+function Scoreboard({ game }: { game: GameState }) {
+  return (
+    <Box
+      data-testid="scoreboard"
+      sx={{ display: "flex", justifyContent: "center", gap: 2, py: 0.75, px: 1, flexShrink: 0 }}
+    >
+      {game.scores.map((score, player) => {
+        const active = game.phase === "playing" && game.currentPlayer === player;
+        return (
+          <Box
+            key={player}
+            aria-current={active ? "true" : undefined}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              px: 2,
+              py: 0.5,
+              borderRadius: 2,
+              fontWeight: 900,
+              color: active ? "#fff" : PLAYER_COLORS[player],
+              bgcolor: active ? PLAYER_COLORS[player] : "transparent",
+              border: `3px solid ${PLAYER_COLORS[player]}`,
+              transition: "background-color 0.2s, color 0.2s",
+            }}
+          >
+            <span>{playerName(player)}</span>
+            <span aria-label={`${playerName(player)} score`}>{score}</span>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
+function finalMessage(game: GameState): string {
+  const time = formatElapsed((game.finishedAt ?? 0) - (game.startedAt ?? 0));
+  if (game.players === 1) return `All matched! ${time}`;
+  const leaders = winners(game);
+  return leaders.length === 1 ? `${playerName(leaders[0])} wins!` : "It's a tie!";
+}
 
 const CARD_SIZE_STORAGE_KEY = "slopdex.memory.cardSize";
 
@@ -126,7 +176,10 @@ export function MemoryRoute() {
       defaultCardSize({ width: window.innerWidth, height: window.innerHeight }),
   );
   const committedSize = useRef(cardSize);
-  const { game, status, start, flip, resize, dealNew } = useMemoryGame(area, cardSize);
+  const { game, status, players, setPlayers, start, flip, resize, dealNew } = useMemoryGame(
+    area,
+    cardSize,
+  );
   const screenAngle = useSyncExternalStore(subscribeToScreenAngle, readScreenAngle);
 
   const commitCardSize = (size: number) => {
@@ -178,6 +231,32 @@ export function MemoryRoute() {
         <LinkedIconButton to="/" aria-label="Back to Pokédex" color="inherit">
           <ArrowBackRoundedIcon />
         </LinkedIconButton>
+        <ToggleButtonGroup
+          exclusive
+          size="small"
+          aria-label="Players"
+          value={players}
+          disabled={locked}
+          onChange={(_, value: PlayerCount | null) => value && setPlayers(value)}
+          sx={{
+            "& .MuiToggleButton-root": {
+              color: "inherit",
+              borderColor: "currentColor",
+              px: 1.25,
+              py: 0.25,
+              fontWeight: 700,
+              "&.Mui-selected": { color: "inherit", bgcolor: "rgba(255,255,255,0.3)" },
+              "&.Mui-disabled": { color: "inherit", opacity: 0.5 },
+            },
+          }}
+        >
+          <ToggleButton value={1} aria-label="1 player">
+            1P
+          </ToggleButton>
+          <ToggleButton value={2} aria-label="2 players">
+            2P
+          </ToggleButton>
+        </ToggleButtonGroup>
         <Box sx={{ flex: 1, display: "flex", justifyContent: "center", minWidth: 0 }}>
           <Slider
             aria-label="Card size"
@@ -198,6 +277,8 @@ export function MemoryRoute() {
         </Box>
         <Timer game={game} />
       </Box>
+
+      {game && game.players === 2 && <Scoreboard game={game} />}
 
       <Box sx={{ flex: 1, minHeight: 0, position: "relative", p: 1 }}>
         <Box
@@ -231,6 +312,11 @@ export function MemoryRoute() {
                     artworkSrc={card.pokemon.artworkSrc}
                     side={side}
                     matched={matched}
+                    matchColor={
+                      game.players === 2
+                        ? PLAYER_COLORS[game.matchedBy[card.pokemon.id] ?? 0]
+                        : SOLO_MATCH_COLOR
+                    }
                     faceUp={matched || game.flipped.includes(cardIndex)}
                     disabled={game.phase !== "playing" || matched}
                     onFlip={flip}
@@ -295,8 +381,13 @@ export function MemoryRoute() {
                 }}
               >
                 <Typography variant="h5" component="p" sx={{ fontWeight: 900 }}>
-                  All matched! {formatElapsed((game.finishedAt ?? 0) - (game.startedAt ?? 0))}
+                  {finalMessage(game)}
                 </Typography>
+                {game.players === 2 && (
+                  <Typography sx={{ fontWeight: 700, fontSize: 20 }}>
+                    Final score: {game.scores[0]} – {game.scores[1]}
+                  </Typography>
+                )}
                 <Button
                   variant="contained"
                   color="secondary"

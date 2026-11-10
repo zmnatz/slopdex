@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { renderWithRouter } from "../test-utils/renderWithRouter";
 import { MISMATCH_DELAY_MS } from "../utils/memoryGame";
@@ -226,5 +226,34 @@ describe("MemoryRoute", () => {
         .sort(),
     ).toEqual([...before].sort());
     expect(screen.getByRole("button", { name: /^Card \d+, mon-/ })).toBeTruthy();
+  });
+
+  it("plays two players: turns alternate on a mismatch, matches score, and the final score shows", async () => {
+    const startButton = await renderDealt();
+    fireEvent.click(screen.getByRole("button", { name: "2 players" }));
+    expect(screen.getByLabelText("Player 1 score").textContent).toBe("0");
+    fireEvent.click(startButton);
+
+    const active = () =>
+      within(screen.getByTestId("scoreboard"))
+        .getAllByText(/^Player \d$/)
+        .find((el) => el.parentElement?.getAttribute("aria-current") === "true")?.textContent;
+    expect(active()).toBe("Player 1");
+
+    const { first, other } = pairedCards();
+    fireEvent.click(first.element);
+    fireEvent.click(other.element);
+    await waitFor(() => expect(active()).toBe("Player 2"), { timeout: MISMATCH_DELAY_MS + 500 });
+    expect(screen.getByRole("button", { name: "2 players" }).getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+
+    const all = cards();
+    for (const art of new Set(all.map((c) => c.art))) {
+      for (const card of all.filter((c) => c.art === art)) fireEvent.click(card.element);
+    }
+    const status = await screen.findByRole("status");
+    expect(status.textContent).toMatch(/Player 2 wins!/);
+    expect(status.textContent).toMatch(/Final score: 0 – 2/);
   });
 });

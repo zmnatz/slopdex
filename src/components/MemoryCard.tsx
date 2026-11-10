@@ -22,6 +22,7 @@ export const MemoryCard = memo(function MemoryCard({
   side,
   faceUp,
   matched,
+  matchColor,
   disabled,
   index,
   onFlip,
@@ -32,6 +33,8 @@ export const MemoryCard = memo(function MemoryCard({
   side: number;
   faceUp: boolean;
   matched: boolean;
+  /** Outline color of a matched card; identifies who matched it in 2-player play. */
+  matchColor: string;
   disabled: boolean;
   index: number;
   onFlip: (index: number) => void;
@@ -72,8 +75,8 @@ export const MemoryCard = memo(function MemoryCard({
           sx={{
             ...FACE_SX,
             transform: "rotateY(180deg)",
-            bgcolor: "#fff",
-            boxShadow: matched ? "0 0 0 3px #43a047" : 2,
+            bgcolor: matched ? `${matchColor}22` : "#fff",
+            boxShadow: matched ? `0 0 0 4px ${matchColor}` : 2,
           }}
         >
           <Box

@@ -12,6 +12,7 @@ import {
   MISMATCH_DELAY_MS,
   type MemoryPokemon,
   newGame,
+  type PlayerCount,
   shuffle,
 } from "../utils/memoryGame";
 import { getArtworkUrl } from "../utils/pokemon";
@@ -92,6 +93,8 @@ function pokemonOn(game: GameState | null): MemoryPokemon[] {
 export function useMemoryGame(area: Area | null, cardSize: number) {
   const client = useQueryClient();
   const [game, setGame] = useState<GameState | null>(null);
+  const [players, setPlayersState] = useState<PlayerCount>(1);
+  const playersRef = useRef(players);
   const [status, setStatus] = useState<"loading" | "idle" | "error">("loading");
   // Only the newest deal may land; a slider release can supersede one in flight.
   const latestDeal = useRef(0);
@@ -112,7 +115,7 @@ export function useMemoryGame(area: Area | null, cardSize: number) {
     try {
       const pokemon = await loadPokemon(client, pairs, kept);
       if (dealId !== latestDeal.current) return;
-      setGame(newGame(dealBoard(pokemon, grid, orientation)));
+      setGame(newGame(dealBoard(pokemon, grid, orientation), playersRef.current));
       setStatus("idle");
     } catch {
       if (dealId !== latestDeal.current) return;
@@ -145,6 +148,12 @@ export function useMemoryGame(area: Area | null, cardSize: number) {
   return {
     game,
     status,
+    players,
+    setPlayers: (count: PlayerCount) => {
+      playersRef.current = count;
+      setPlayersState(count);
+      setGame((g) => g && gameReducer(g, { type: "setPlayers", players: count }));
+    },
     start: () => setGame((g) => g && gameReducer(g, { type: "start", now: Date.now() })),
     flip: (index: number) => {
       if (!game || !canFlip(game, index)) return;
