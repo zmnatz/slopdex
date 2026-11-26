@@ -98,6 +98,13 @@ describe("MemoryRoute", () => {
     expect(screen.getByRole("timer").textContent).toBe("0:00");
   });
 
+  it("outlines the grid it will deal while the cards load", async () => {
+    getPokemon.mockImplementation(() => new Promise(() => {}));
+    await renderWithRouter(<MemoryRoute />, "/memory");
+    await waitFor(() => expect(screen.getAllByTestId("card-spot")).toHaveLength(4));
+    expect(screen.queryAllByTestId("memory-card")).toHaveLength(0);
+  });
+
   it("shows only artwork on a flipped card, not a name or types", async () => {
     await startAndDeal(await renderDealt());
     fireEvent.click(cards()[0].element);

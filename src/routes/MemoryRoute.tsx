@@ -10,6 +10,7 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { MemoryCard } from "../components/MemoryCard";
+import { TOTAL_POKEMON } from "../hooks/useGameRound";
 import { readScreenAngle, useMemoryGame } from "../hooks/useMemoryGame";
 import { LinkedIconButton } from "../utils/linkedComponents";
 import {
@@ -19,15 +20,17 @@ import {
   cardSizeSteps,
   cardSideFor,
   DEAL_FLIGHT_MS,
-  DEAL_STAGGER_MS,
+  dealStaggerMs,
   defaultCardSize,
   fitGrid,
   formatElapsed,
   type GameState,
+  type Grid,
+  type Phase,
   type PlayerCount,
-  MAX_CARD_SIZE,
   MIN_CARD_SIZE,
   quarterTurns,
+  sameGrid,
   winners,
 } from "../utils/memoryGame";
 
@@ -70,18 +73,53 @@ function Scoreboard({ game }: { game: GameState }) {
   );
 }
 
+/** The dashed outline of an empty spot on the Board. */
+function SpotOutline({ side }: { side: number }) {
+  return (
+    <Box
+      aria-hidden
+      data-testid="card-spot"
+      sx={{
+        position: "absolute",
+        inset: 0,
+        borderRadius: `${Math.round(side * 0.12)}px`,
+        border: "2px dashed rgba(0, 0, 0, 0.25)",
+      }}
+    />
+  );
+}
+
+/** The outlines of a grid's spots, with no cards: previews a card size. */
+function GridPreview({ grid, side }: { grid: Grid; side: number }) {
+  return (
+    <Box
+      data-testid="size-preview"
+      sx={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${grid.cols}, ${side}px)`,
+        gap: `${CARD_GAP}px`,
+      }}
+    >
+      {Array.from({ length: grid.cols * grid.rows }, (_, i) => (
+        <Box key={i} sx={{ position: "relative", width: side, height: side }}>
+          <SpotOutline side={side} />
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
 /**
  * One spot on the Board. Before Start the spot shows only its outline, so the
  * card size can be previewed, and its card waits in the deck on the top-left
  * spot. On Start each card flies from the deck to its spot in reading order.
  */
-function DealtSlot({
+function CardSpot({
   position,
   cardCount,
   cols,
   side,
-  inDeck,
-  dealing,
+  phase,
   children,
 }: {
   /** Index in on-screen reading order, which is also the order cards are dealt. */
@@ -89,27 +127,17 @@ function DealtSlot({
   cardCount: number;
   cols: number;
   side: number;
-  inDeck: boolean;
-  dealing: boolean;
+  phase: Phase;
   children: React.ReactNode;
 }) {
+  const inDeck = phase === "ready";
   const pitch = side + CARD_GAP;
   const x = -(position % cols) * pitch;
   const y = -Math.floor(position / cols) * pitch;
-  const delay = `${position * DEAL_STAGGER_MS}ms`;
+  const delay = `${position * dealStaggerMs(cardCount)}ms`;
   return (
     <Box sx={{ position: "relative" }}>
-      {(inDeck || dealing) && (
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: `${Math.round(side * 0.12)}px`,
-            border: "2px dashed rgba(0, 0, 0, 0.25)",
-          }}
-        />
-      )}
+      {(inDeck || phase === "dealing") && <SpotOutline side={side} />}
       <Box
         sx={{
           position: "relative",
@@ -121,6 +149,7 @@ function DealtSlot({
           transition: !inDeck
             ? `transform ${DEAL_FLIGHT_MS}ms cubic-bezier(0.2, 0.7, 0.3, 1) ${delay}, z-index 0ms ${delay}`
             : "none",
+          // Matches the hook, which starts play at once under reduced motion.
           "@media (prefers-reduced-motion: reduce)": { transform: "none", transition: "none" },
         }}
       >
@@ -142,7 +171,7 @@ const CARD_SIZE_STORAGE_KEY = "slopdex.memory.cardSize";
 function readSavedCardSize(): number | null {
   try {
     const saved = Number(localStorage.getItem(CARD_SIZE_STORAGE_KEY));
-    return saved >= MIN_CARD_SIZE && saved <= MAX_CARD_SIZE ? saved : null;
+    return Number.isFinite(saved) && saved >= MIN_CARD_SIZE ? saved : null;
   } catch {
     return null;
   }
@@ -238,29 +267,36 @@ export function MemoryRoute() {
       readSavedCardSize() ??
       defaultCardSize({ width: window.innerWidth, height: window.innerHeight }),
   );
-  const committedSize = useRef(cardSize);
-  const { game, status, players, setPlayers, start, flip, resize, dealNew } = useMemoryGame(
-    area,
-    cardSize,
-  );
-  const screenAngle = useSyncExternalStore(subscribeToScreenAngle, readScreenAngle);
+  const [committedSize, setCommittedSize] = useState(cardSize);
 
   // Each slider step is a card size that deals a different grid in this area.
-  const sizeSteps = useMemo(() => (area ? cardSizeSteps(area) : []), [area]);
+  // Every card needs a partner, so no Board can hold more than two of each Pokémon.
+  const sizeSteps = useMemo(() => (area ? cardSizeSteps(area, TOTAL_POKEMON * 2) : []), [area]);
   const stepIndex = Math.max(
     0,
     sizeSteps.findLastIndex((size) => size <= cardSize),
   );
-  const cardCountAt = (step: number) => {
+  // The size on the slider's current step; a saved size between steps snaps to one.
+  const stepSize = sizeSteps[stepIndex] ?? cardSize;
+  const cardCountLabel = (step: number) => {
     if (!area || sizeSteps.length === 0) return "";
     const { cols, rows } = fitGrid(area, sizeSteps[step]);
     return `${cols * rows} cards`;
   };
 
+  const { game, status, players, setPlayers, start, flip, resize, dealNew } = useMemoryGame(
+    area,
+    stepSize,
+  );
+  const screenAngle = useSyncExternalStore(subscribeToScreenAngle, readScreenAngle);
+
   const commitCardSize = (size: number) => {
-    if (size === committedSize.current) return;
-    committedSize.current = size;
+    const previous = committedSize;
+    setCommittedSize(size);
+    if (size === previous) return;
     saveCardSize(size);
+    // A size on the same grid would deal a new Board that looks no different.
+    if (area && sameGrid(fitGrid(area, size), fitGrid(area, previous))) return;
     resize(size);
   };
 
@@ -277,6 +313,11 @@ export function MemoryRoute() {
       : null;
   const side = arrangement && area ? cardSideFor(area, arrangement) : 0;
   const locked = game !== null && game.phase !== "ready";
+  // While the slider is dragged, or a Board is loading, outline the grid it will deal.
+  const previewGrid =
+    area && status !== "error" && (cardSize !== committedSize || !board)
+      ? fitGrid(area, stepSize)
+      : null;
 
   return (
     <Box
@@ -339,10 +380,11 @@ export function MemoryRoute() {
             min={0}
             max={Math.max(0, sizeSteps.length - 1)}
             step={1}
-            marks
+            // Too many ticks would blur into a line.
+            marks={sizeSteps.length <= 24}
             value={stepIndex}
             disabled={locked || sizeSteps.length < 2}
-            getAriaValueText={cardCountAt}
+            getAriaValueText={cardCountLabel}
             onChange={(_, step) => setCardSize(sizeSteps[step as number])}
             onChangeCommitted={(_, step) => commitCardSize(sizeSteps[step as number])}
             sx={{
@@ -368,7 +410,10 @@ export function MemoryRoute() {
             justifyContent: "center",
           }}
         >
-          {board && arrangement && (
+          {previewGrid && area && (
+            <GridPreview grid={previewGrid} side={cardSideFor(area, previewGrid)} />
+          )}
+          {!previewGrid && board && arrangement && (
             <Box
               data-testid="memory-board"
               aria-busy={game.phase === "dealing"}
@@ -384,14 +429,13 @@ export function MemoryRoute() {
                 const card = board.cards[cardIndex];
                 const matched = game.matchedIds.includes(card.pokemon.id);
                 return (
-                  <DealtSlot
+                  <CardSpot
                     key={card.key}
                     position={position}
                     cardCount={board.cards.length}
                     cols={arrangement.cols}
                     side={side}
-                    inDeck={game.phase === "ready"}
-                    dealing={game.phase === "dealing"}
+                    phase={game.phase}
                   >
                     <MemoryCard
                       index={cardIndex}
@@ -409,7 +453,7 @@ export function MemoryRoute() {
                       disabled={game.phase !== "playing" || matched}
                       onFlip={flip}
                     />
-                  </DealtSlot>
+                  </CardSpot>
                 );
               })}
             </Box>

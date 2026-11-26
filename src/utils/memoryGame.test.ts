@@ -5,6 +5,8 @@ import {
   cardSideFor,
   cardSizeSteps,
   dealBoard,
+  dealDurationMs,
+  dealStaggerMs,
   fitGrid,
   formatElapsed,
   gameReducer,
@@ -82,6 +84,17 @@ describe("cardSizeSteps", () => {
     expect(cardSizeSteps({ width: 300, height: 300 })).toEqual([64, 70, 95]);
   });
 
+  it("goes up to cards big enough for a handful on even a large screen", () => {
+    const area = { width: 3840, height: 2100 };
+    const largest = cardSizeSteps(area).at(-1) ?? 0;
+    const { cols, rows } = fitGrid(area, largest);
+    expect(cols * rows).toBeLessThanOrEqual(6);
+  });
+
+  it("leaves out sizes that need more cards than there are to deal", () => {
+    expect(cardSizeSteps({ width: 300, height: 300 }, 15)).toEqual([70, 95]);
+  });
+
   it("never offers two sizes that deal the same grid", () => {
     for (const area of [
       { width: 375, height: 600 },
@@ -92,6 +105,21 @@ describe("cardSizeSteps", () => {
       const grids = cardSizeSteps(area).map((size) => JSON.stringify(fitGrid(area, size)));
       expect(new Set(grids).size).toBe(grids.length);
       expect(grids.length).toBeGreaterThan(1);
+    }
+  });
+});
+
+describe("deal timing", () => {
+  it("deals a small Board card by card, a fixed beat apart", () => {
+    expect(dealStaggerMs(4)).toBe(40);
+    expect(dealDurationMs(4)).toBe(3 * 40 + 350);
+  });
+
+  it("deals faster the more cards there are, never taking more than five seconds", () => {
+    expect(dealStaggerMs(300)).toBeLessThan(dealStaggerMs(150));
+    expect(dealStaggerMs(1508)).toBeLessThan(dealStaggerMs(300));
+    for (const count of [150, 300, 1508, 2050]) {
+      expect(dealDurationMs(count)).toBeLessThanOrEqual(5000);
     }
   });
 });

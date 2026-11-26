@@ -1,17 +1,25 @@
 import type { PokemonData } from "./types";
 
 export const MIN_CARD_SIZE = 64;
-export const MAX_CARD_SIZE = 200;
 export const CARD_GAP = 8;
 export const MISMATCH_DELAY_MS = 1000;
-/** Gap between one card leaving the deck and the next, when dealing. */
-export const DEAL_STAGGER_MS = 40;
+/** Gap between one card leaving the deck and the next, when dealing a small Board. */
+const DEAL_STAGGER_MS = 40;
 /** How long one card takes to fly from the deck to its spot. */
 export const DEAL_FLIGHT_MS = 350;
+/** The longest a whole Deal may take; bigger Boards deal faster to stay within it. */
+const MAX_DEAL_MS = 5000;
+
+/** Gap between one card leaving the deck and the next, when dealing `cardCount` cards. */
+export function dealStaggerMs(cardCount: number): number {
+  return cardCount < 2
+    ? 0
+    : Math.min(DEAL_STAGGER_MS, (MAX_DEAL_MS - DEAL_FLIGHT_MS) / (cardCount - 1));
+}
 
 /** How long dealing `cardCount` cards takes, from Start until the last card lands. */
 export function dealDurationMs(cardCount: number): number {
-  return cardCount === 0 ? 0 : (cardCount - 1) * DEAL_STAGGER_MS + DEAL_FLIGHT_MS;
+  return cardCount === 0 ? 0 : (cardCount - 1) * dealStaggerMs(cardCount) + DEAL_FLIGHT_MS;
 }
 
 const MIN_GRID_SIDE = 2;
@@ -90,6 +98,10 @@ export function shuffle<T>(items: readonly T[]): T[] {
   return result;
 }
 
+export function sameGrid(a: Grid, b: Grid): boolean {
+  return a.cols === b.cols && a.rows === b.rows;
+}
+
 /** The largest square card that fits `grid` inside `area`, in whole pixels. */
 export function cardSideFor(area: Area, grid: Grid): number {
   const sideFor = (space: number, count: number) => (space - CARD_GAP * (count - 1)) / count;
@@ -119,14 +131,18 @@ export function fitGrid(area: Area, cardSize: number): Grid {
 /**
  * The card sizes a player can pick in `area`: the smallest size that deals each
  * different grid, smallest first. Sizes in between would deal the same Board.
+ * They go up to two cards across the area's short side, so any screen can deal
+ * a Board of a few big cards. Sizes whose grid needs more than `maxCards` are left out.
  */
-export function cardSizeSteps(area: Area): number[] {
+export function cardSizeSteps(area: Area, maxCards = Number.POSITIVE_INFINITY): number[] {
   const steps: number[] = [];
   const seen = new Set<string>();
-  for (let size = MIN_CARD_SIZE; size <= MAX_CARD_SIZE; size++) {
-    const { cols, rows } = fitGrid(area, size);
-    const key = `${cols}×${rows}`;
-    if (seen.has(key)) continue;
+  const shortSide = Math.min(area.width, area.height);
+  const largest = Math.max(MIN_CARD_SIZE, Math.floor((shortSide - CARD_GAP) / MIN_GRID_SIDE));
+  for (let size = MIN_CARD_SIZE; size <= largest; size++) {
+    const grid = fitGrid(area, size);
+    const key = `${grid.cols}×${grid.rows}`;
+    if (grid.cols * grid.rows > maxCards || seen.has(key)) continue;
     seen.add(key);
     steps.push(size);
   }
