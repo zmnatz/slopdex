@@ -12,6 +12,7 @@ import {
   gameReducer,
   newGame,
   quarterTurns,
+  teams,
   type GameState,
   type MemoryPokemon,
   type PlayerCount,
@@ -194,6 +195,14 @@ describe("gameReducer", () => {
 
 describe("two-player game", () => {
   const settle = (state: GameState) => gameReducer(state, { type: "settleMismatch" });
+
+  it("gathers each player's matched Pokémon into their team, in the order matched", () => {
+    let state = flip(flip(gameWith([1, 2, 3], 2), 0), 1); // Player 1 matches 1.
+    state = settle(flip(flip(state, 2), 4)); // A mismatch passes the turn.
+    state = flip(flip(state, 4), 5); // Player 2 matches 3,
+    state = flip(flip(state, 2), 3); // then 2.
+    expect(teams(state).map((team) => team.map((p) => p.id))).toEqual([[1], [3, 2]]);
+  });
 
   it("starts with player 1 and zero scores", () => {
     const state = gameWith([1, 2], 2);

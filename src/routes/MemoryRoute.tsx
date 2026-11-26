@@ -10,6 +10,7 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { MemoryCard } from "../components/MemoryCard";
+import { MemoryShowdown } from "../components/MemoryShowdown";
 import { TOTAL_POKEMON } from "../hooks/useGameRound";
 import { readScreenAngle, useMemoryGame } from "../hooks/useMemoryGame";
 import { LinkedIconButton } from "../utils/linkedComponents";
@@ -31,6 +32,7 @@ import {
   MIN_CARD_SIZE,
   quarterTurns,
   sameGrid,
+  teams,
   winners,
 } from "../utils/memoryGame";
 
@@ -156,6 +158,52 @@ function CardSpot({
         {children}
       </Box>
     </Box>
+  );
+}
+
+function ResultCard({
+  game,
+  onPlayAgain,
+  delayMs = 0,
+}: {
+  game: GameState;
+  onPlayAgain: () => void;
+  delayMs?: number;
+}) {
+  return (
+    <Fade in timeout={300} style={{ transitionDelay: `${delayMs}ms` }}>
+      <Paper
+        role="status"
+        elevation={8}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 2,
+          px: 5,
+          py: 3,
+          borderRadius: 3,
+        }}
+      >
+        <Typography variant="h5" component="p" sx={{ fontWeight: 900 }}>
+          {finalMessage(game)}
+        </Typography>
+        {game.players === 2 && (
+          <Typography sx={{ fontWeight: 700, fontSize: 20 }}>
+            Final score: {game.scores[0]} – {game.scores[1]}
+          </Typography>
+        )}
+        <Button
+          variant="contained"
+          color="secondary"
+          size="large"
+          onClick={onPlayAgain}
+          sx={{ fontWeight: 900 }}
+        >
+          Play Again
+        </Button>
+      </Paper>
+    </Fade>
   );
 }
 
@@ -496,43 +544,25 @@ export function MemoryRoute() {
           </CenteredOverlay>
         )}
 
-        {game?.phase === "finished" && (
+        {game?.phase === "finished" && game.players === 1 && (
           <CenteredOverlay>
             {/* Delayed so the final card finishes flipping first. */}
-            <Fade in timeout={300} style={{ transitionDelay: "450ms" }}>
-              <Paper
-                role="status"
-                elevation={8}
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 2,
-                  px: 5,
-                  py: 3,
-                  borderRadius: 3,
-                }}
-              >
-                <Typography variant="h5" component="p" sx={{ fontWeight: 900 }}>
-                  {finalMessage(game)}
-                </Typography>
-                {game.players === 2 && (
-                  <Typography sx={{ fontWeight: 700, fontSize: 20 }}>
-                    Final score: {game.scores[0]} – {game.scores[1]}
-                  </Typography>
-                )}
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  size="large"
-                  onClick={dealNew}
-                  sx={{ fontWeight: 900 }}
-                >
-                  Play Again
-                </Button>
-              </Paper>
-            </Fade>
+            <ResultCard game={game} onPlayAgain={dealNew} delayMs={450} />
           </CenteredOverlay>
+        )}
+
+        {game?.phase === "finished" && game.players === 2 && (
+          <MemoryShowdown
+            key={game.finishedAt}
+            teams={teams(game)}
+            labels={[playerName(0), playerName(1)]}
+            colors={PLAYER_COLORS}
+            winners={winners(game)}
+          >
+            <CenteredOverlay>
+              <ResultCard game={game} onPlayAgain={dealNew} />
+            </CenteredOverlay>
+          </MemoryShowdown>
         )}
       </Box>
     </Box>

@@ -50,6 +50,10 @@ In **Memory Match**, one deal of shuffled face-down cards. Each Pokémon on a Bo
 
 In **Memory Match**, the animation that follows pressing Start. Before Start, a **Board** shows only an outline of each card's spot, previewing the card size, while its cards wait face down in a deck on the top-left spot. On Start they fly one at a time from the deck, in reading order, to their spots. No card can be flipped and the timer stays at 0:00 until the last card lands. Under reduced motion the cards start in their spots and play begins at once. Not to be confused with dealing a Board, which means drawing and shuffling its cards.
 
+### Showdown
+
+In 2-player **Memory Match**, the short animation after the final match. Each player's team (the Pokémon of the **Pairs** they matched) charges the other's and they clash three times. Then the winner's team leaps, the loser's falls and greys out, and on a tie both bounce. The result (the winner or tie, and the final score) is declared a few seconds after the final match. Skipped under reduced motion.
+
 ### Pair
 
 Two cards on a **Board** showing the same Pokémon. A Pair flipped together is matched and stays face up. Two flipped cards that are not a Pair are a mismatch, and both flip back face down.
