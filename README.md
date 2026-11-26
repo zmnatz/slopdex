@@ -4,7 +4,7 @@ Browse Pokémon: search, filter by generation and type, and see details, moves, 
 
 ## Develop
 
-`vp` ([Vite+](https://viteplus.dev)) is the only command. Run everything through it, not through `bun`, `npm`, or `npx`.
+`vp` ([Vite+](https://viteplus.dev)) is the only command. Run everything through it, not through `npm`, `npx`, or Node. The `vp` launcher needs a JavaScript runtime; without Node installed, run it on Bun as `bun --bun vp <command>`.
 
 ```sh
 vp install
@@ -24,7 +24,7 @@ vp run storybook
 - **Storybook** with the Vitest addon: every story runs as a browser test (Playwright Chromium) alongside the unit tests. First run needs `vp exec playwright install chromium`. Stories use MSW to mock PokeAPI.
 - **Lint** is Oxlint through `vp lint`, with the `prefer-vite-plus-imports` rule, so tests import from `vite-plus/test`, not `vitest`.
 - **Formatter** is Oxfmt through `vp fmt` (config in the `fmt` block of `vite.config.ts`).
-- **Pre-commit hook** (`.vite-hooks/pre-commit`) runs `vp fmt --check`, `vp lint`, `vp run build`, and `vp test run`.
+- **Pre-commit hook** (`.vite-hooks/pre-commit`) runs `vp fmt --check`, `vp lint`, `vp run build`, and `vp test run`, each on Bun (`bun --bun vp …`) so it works without Node.
 
 ## Deploy
 

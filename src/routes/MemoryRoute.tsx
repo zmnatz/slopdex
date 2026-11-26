@@ -8,23 +8,29 @@ import Slider from "@mui/material/Slider";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { MemoryCard } from "../components/MemoryCard";
+import { TOTAL_POKEMON } from "../hooks/useGameRound";
 import { readScreenAngle, useMemoryGame } from "../hooks/useMemoryGame";
 import { LinkedIconButton } from "../utils/linkedComponents";
 import {
   type Area,
   arrangeCards,
   CARD_GAP,
-  CARD_SIZE_STEP,
+  cardSizeSteps,
   cardSideFor,
+  DEAL_FLIGHT_MS,
+  dealStaggerMs,
   defaultCardSize,
+  fitGrid,
   formatElapsed,
   type GameState,
+  type Grid,
+  type Phase,
   type PlayerCount,
-  MAX_CARD_SIZE,
   MIN_CARD_SIZE,
   quarterTurns,
+  sameGrid,
   winners,
 } from "../utils/memoryGame";
 
@@ -67,6 +73,92 @@ function Scoreboard({ game }: { game: GameState }) {
   );
 }
 
+/** The dashed outline of an empty spot on the Board. */
+function SpotOutline({ side }: { side: number }) {
+  return (
+    <Box
+      aria-hidden
+      data-testid="card-spot"
+      sx={{
+        position: "absolute",
+        inset: 0,
+        borderRadius: `${Math.round(side * 0.12)}px`,
+        border: "2px dashed rgba(0, 0, 0, 0.25)",
+      }}
+    />
+  );
+}
+
+/** The outlines of a grid's spots, with no cards: previews a card size. */
+function GridPreview({ grid, side }: { grid: Grid; side: number }) {
+  return (
+    <Box
+      data-testid="size-preview"
+      sx={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${grid.cols}, ${side}px)`,
+        gap: `${CARD_GAP}px`,
+      }}
+    >
+      {Array.from({ length: grid.cols * grid.rows }, (_, i) => (
+        <Box key={i} sx={{ position: "relative", width: side, height: side }}>
+          <SpotOutline side={side} />
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
+/**
+ * One spot on the Board. Before Start the spot shows only its outline, so the
+ * card size can be previewed, and its card waits in the deck on the top-left
+ * spot. On Start each card flies from the deck to its spot in reading order.
+ */
+function CardSpot({
+  position,
+  cardCount,
+  cols,
+  side,
+  phase,
+  children,
+}: {
+  /** Index in on-screen reading order, which is also the order cards are dealt. */
+  position: number;
+  cardCount: number;
+  cols: number;
+  side: number;
+  phase: Phase;
+  children: React.ReactNode;
+}) {
+  const inDeck = phase === "ready";
+  const pitch = side + CARD_GAP;
+  const x = -(position % cols) * pitch;
+  const y = -Math.floor(position / cols) * pitch;
+  const delay = `${position * dealStaggerMs(cardCount)}ms`;
+  return (
+    <Box sx={{ position: "relative" }}>
+      {(inDeck || phase === "dealing") && <SpotOutline side={side} />}
+      <Box
+        sx={{
+          position: "relative",
+          // In the deck, the next card to be dealt is on top. As each card leaves the
+          // deck it jumps above every card dealt before it, so it flies over them.
+          zIndex: inDeck ? cardCount - position : cardCount + position + 1,
+          transform: inDeck ? `translate(${x}px, ${y}px)` : "none",
+          // Kept on once dealt, so a card still in flight when play begins lands smoothly.
+          transition: !inDeck
+            ? `transform ${DEAL_FLIGHT_MS}ms cubic-bezier(0.2, 0.7, 0.3, 1) ${delay}, z-index 0ms ${delay}`
+            : "none",
+          // Matches the hook, which starts play at once under reduced motion.
+          "@media (prefers-reduced-motion: reduce)": { transform: "none", transition: "none" },
+        }}
+      >
+        {children}
+      </Box>
+    </Box>
+  );
+}
+
 function finalMessage(game: GameState): string {
   const time = formatElapsed((game.finishedAt ?? 0) - (game.startedAt ?? 0));
   if (game.players === 1) return `All matched! ${time}`;
@@ -79,7 +171,7 @@ const CARD_SIZE_STORAGE_KEY = "slopdex.memory.cardSize";
 function readSavedCardSize(): number | null {
   try {
     const saved = Number(localStorage.getItem(CARD_SIZE_STORAGE_KEY));
-    return saved >= MIN_CARD_SIZE && saved <= MAX_CARD_SIZE ? saved : null;
+    return Number.isFinite(saved) && saved >= MIN_CARD_SIZE ? saved : null;
   } catch {
     return null;
   }
@@ -175,17 +267,36 @@ export function MemoryRoute() {
       readSavedCardSize() ??
       defaultCardSize({ width: window.innerWidth, height: window.innerHeight }),
   );
-  const committedSize = useRef(cardSize);
+  const [committedSize, setCommittedSize] = useState(cardSize);
+
+  // Each slider step is a card size that deals a different grid in this area.
+  // Every card needs a partner, so no Board can hold more than two of each Pokémon.
+  const sizeSteps = useMemo(() => (area ? cardSizeSteps(area, TOTAL_POKEMON * 2) : []), [area]);
+  const stepIndex = Math.max(
+    0,
+    sizeSteps.findLastIndex((size) => size <= cardSize),
+  );
+  // The size on the slider's current step; a saved size between steps snaps to one.
+  const stepSize = sizeSteps[stepIndex] ?? cardSize;
+  const cardCountLabel = (step: number) => {
+    if (!area || sizeSteps.length === 0) return "";
+    const { cols, rows } = fitGrid(area, sizeSteps[step]);
+    return `${cols * rows} cards`;
+  };
+
   const { game, status, players, setPlayers, start, flip, resize, dealNew } = useMemoryGame(
     area,
-    cardSize,
+    stepSize,
   );
   const screenAngle = useSyncExternalStore(subscribeToScreenAngle, readScreenAngle);
 
   const commitCardSize = (size: number) => {
-    if (size === committedSize.current) return;
-    committedSize.current = size;
+    const previous = committedSize;
+    setCommittedSize(size);
+    if (size === previous) return;
     saveCardSize(size);
+    // A size on the same grid would deal a new Board that looks no different.
+    if (area && sameGrid(fitGrid(area, size), fitGrid(area, previous))) return;
     resize(size);
   };
 
@@ -202,6 +313,11 @@ export function MemoryRoute() {
       : null;
   const side = arrangement && area ? cardSideFor(area, arrangement) : 0;
   const locked = game !== null && game.phase !== "ready";
+  // While the slider is dragged, or a Board is loading, outline the grid it will deal.
+  const previewGrid =
+    area && status !== "error" && (cardSize !== committedSize || !board)
+      ? fitGrid(area, stepSize)
+      : null;
 
   return (
     <Box
@@ -261,13 +377,16 @@ export function MemoryRoute() {
           <Slider
             aria-label="Card size"
             size="small"
-            min={MIN_CARD_SIZE}
-            max={MAX_CARD_SIZE}
-            step={CARD_SIZE_STEP}
-            value={cardSize}
-            disabled={locked}
-            onChange={(_, value) => setCardSize(value as number)}
-            onChangeCommitted={(_, value) => commitCardSize(value as number)}
+            min={0}
+            max={Math.max(0, sizeSteps.length - 1)}
+            step={1}
+            // Too many ticks would blur into a line.
+            marks={sizeSteps.length <= 24}
+            value={stepIndex}
+            disabled={locked || sizeSteps.length < 2}
+            getAriaValueText={cardCountLabel}
+            onChange={(_, step) => setCardSize(sizeSteps[step as number])}
+            onChangeCommitted={(_, step) => commitCardSize(sizeSteps[step as number])}
             sx={{
               maxWidth: 320,
               color: "inherit",
@@ -291,36 +410,50 @@ export function MemoryRoute() {
             justifyContent: "center",
           }}
         >
-          {board && arrangement && (
+          {previewGrid && area && (
+            <GridPreview grid={previewGrid} side={cardSideFor(area, previewGrid)} />
+          )}
+          {!previewGrid && board && arrangement && (
             <Box
               data-testid="memory-board"
+              aria-busy={game.phase === "dealing"}
               sx={{
+                // Keeps the deck's z-indexes inside the Board, under the Start button.
+                isolation: "isolate",
                 display: "grid",
                 gridTemplateColumns: `repeat(${arrangement.cols}, ${side}px)`,
                 gap: `${CARD_GAP}px`,
               }}
             >
-              {arrangement.order.map((cardIndex) => {
+              {arrangement.order.map((cardIndex, position) => {
                 const card = board.cards[cardIndex];
                 const matched = game.matchedIds.includes(card.pokemon.id);
                 return (
-                  <MemoryCard
+                  <CardSpot
                     key={card.key}
-                    index={cardIndex}
-                    position={cardIndex + 1}
-                    name={card.pokemon.name}
-                    artworkSrc={card.pokemon.artworkSrc}
+                    position={position}
+                    cardCount={board.cards.length}
+                    cols={arrangement.cols}
                     side={side}
-                    matched={matched}
-                    matchColor={
-                      game.players === 2
-                        ? PLAYER_COLORS[game.matchedBy[card.pokemon.id] ?? 0]
-                        : SOLO_MATCH_COLOR
-                    }
-                    faceUp={matched || game.flipped.includes(cardIndex)}
-                    disabled={game.phase !== "playing" || matched}
-                    onFlip={flip}
-                  />
+                    phase={game.phase}
+                  >
+                    <MemoryCard
+                      index={cardIndex}
+                      position={cardIndex + 1}
+                      name={card.pokemon.name}
+                      artworkSrc={card.pokemon.artworkSrc}
+                      side={side}
+                      matched={matched}
+                      matchColor={
+                        game.players === 2
+                          ? PLAYER_COLORS[game.matchedBy[card.pokemon.id] ?? 0]
+                          : SOLO_MATCH_COLOR
+                      }
+                      faceUp={matched || game.flipped.includes(cardIndex)}
+                      disabled={game.phase !== "playing" || matched}
+                      onFlip={flip}
+                    />
+                  </CardSpot>
                 );
               })}
             </Box>

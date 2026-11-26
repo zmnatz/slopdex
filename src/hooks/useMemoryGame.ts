@@ -6,6 +6,7 @@ import {
   type Area,
   canFlip,
   dealBoard,
+  dealDurationMs,
   fitGrid,
   gameReducer,
   type GameState,
@@ -21,6 +22,10 @@ import { TOTAL_POKEMON } from "./useGameRound";
 const LOAD_CONCURRENCY = 6;
 /** Failed Pokémon replaced before a deal gives up: more than this suggests an outage. */
 const MAX_REPLACEMENTS = 5;
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+}
 
 export function readScreenAngle(): number {
   return window.screen.orientation?.angle ?? 0;
@@ -88,7 +93,7 @@ function pokemonOn(game: GameState | null): MemoryPokemon[] {
 
 /**
  * One session of Memory Match: dealing Boards (once `area` is first known),
- * playing them, and the cries and mismatch delay that go with play.
+ * playing them, and the deal, cries and mismatch delay that go with play.
  */
 export function useMemoryGame(area: Area | null, cardSize: number) {
   const client = useQueryClient();
@@ -143,6 +148,16 @@ export function useMemoryGame(area: Area | null, cardSize: number) {
     return () => clearTimeout(timer);
   }, [mismatchPending]);
 
+  const dealingCardCount = game?.phase === "dealing" ? game.board.cards.length : null;
+  useEffect(() => {
+    if (dealingCardCount === null) return;
+    const timer = setTimeout(
+      () => setGame((g) => g && gameReducer(g, { type: "dealt", now: Date.now() })),
+      prefersReducedMotion() ? 0 : dealDurationMs(dealingCardCount),
+    );
+    return () => clearTimeout(timer);
+  }, [dealingCardCount]);
+
   useEffect(() => () => currentCry.current?.pause(), []);
 
   return {
@@ -154,7 +169,8 @@ export function useMemoryGame(area: Area | null, cardSize: number) {
       setPlayersState(count);
       setGame((g) => g && gameReducer(g, { type: "setPlayers", players: count }));
     },
-    start: () => setGame((g) => g && gameReducer(g, { type: "start", now: Date.now() })),
+    /** Deal the cards out; play and the timer begin once the last one lands. */
+    start: () => setGame((g) => g && gameReducer(g, { type: "start" })),
     flip: (index: number) => {
       if (!game || !canFlip(game, index)) return;
       currentCry.current?.pause();

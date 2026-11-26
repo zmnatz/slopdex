@@ -3,11 +3,13 @@ import {
   arrangeCards,
   canFlip,
   cardSideFor,
+  cardSizeSteps,
   dealBoard,
+  dealDurationMs,
+  dealStaggerMs,
   fitGrid,
   formatElapsed,
   gameReducer,
-  MAX_PAIRS,
   newGame,
   quarterTurns,
   type GameState,
@@ -32,7 +34,8 @@ function gameWith(ids: number[], players: PlayerCount = 1): GameState {
     { key: `${id}-a`, pokemon: pokemon(id) },
     { key: `${id}-b`, pokemon: pokemon(id) },
   ]);
-  return gameReducer(newGame(board, players), { type: "start", now: 1000 });
+  const dealing = gameReducer(newGame(board, players), { type: "start" });
+  return gameReducer(dealing, { type: "dealt", now: 1000 });
 }
 const flip = (state: GameState, index: number, now = 2000) =>
   gameReducer(state, { type: "flip", index, now });
@@ -58,10 +61,9 @@ describe("fitGrid", () => {
     }
   });
 
-  it("caps the Board and keeps it shaped like the area", () => {
-    const { cols, rows } = fitGrid({ width: 3840, height: 2100 }, 64);
-    expect(cols * rows).toBeLessThanOrEqual(MAX_PAIRS * 2);
-    expect(cols).toBeGreaterThan(rows);
+  it("fills even a very large area, with no limit on the number of cards", () => {
+    // 53×29 small cards fit; that's odd, and dropping a column leaves cards as large.
+    expect(fitGrid({ width: 3840, height: 2100 }, 64)).toEqual({ cols: 52, rows: 29 });
   });
 
   it("deals at least a 2×2 Board even when the card size exceeds the area", () => {
@@ -73,6 +75,52 @@ describe("fitGrid", () => {
     const grid = fitGrid(area, 90);
     expect(grid).toEqual({ cols: 6, rows: 3 });
     expect(cardSideFor(area, grid)).toBeGreaterThanOrEqual(90);
+  });
+});
+
+describe("cardSizeSteps", () => {
+  it("offers the smallest card size that deals each different grid, smallest first", () => {
+    // 300×300: 4×4 up to 69px, then 3×3 trimmed to 2×3, then 2×2 from 95px.
+    expect(cardSizeSteps({ width: 300, height: 300 })).toEqual([64, 70, 95]);
+  });
+
+  it("goes up to cards big enough for a handful on even a large screen", () => {
+    const area = { width: 3840, height: 2100 };
+    const largest = cardSizeSteps(area).at(-1) ?? 0;
+    const { cols, rows } = fitGrid(area, largest);
+    expect(cols * rows).toBeLessThanOrEqual(6);
+  });
+
+  it("leaves out sizes that need more cards than there are to deal", () => {
+    expect(cardSizeSteps({ width: 300, height: 300 }, 15)).toEqual([70, 95]);
+  });
+
+  it("never offers two sizes that deal the same grid", () => {
+    for (const area of [
+      { width: 375, height: 600 },
+      { width: 1280, height: 720 },
+      { width: 1920, height: 1080 },
+      { width: 3840, height: 2100 },
+    ]) {
+      const grids = cardSizeSteps(area).map((size) => JSON.stringify(fitGrid(area, size)));
+      expect(new Set(grids).size).toBe(grids.length);
+      expect(grids.length).toBeGreaterThan(1);
+    }
+  });
+});
+
+describe("deal timing", () => {
+  it("deals a small Board card by card, a fixed beat apart", () => {
+    expect(dealStaggerMs(4)).toBe(40);
+    expect(dealDurationMs(4)).toBe(3 * 40 + 350);
+  });
+
+  it("deals faster the more cards there are, never taking more than five seconds", () => {
+    expect(dealStaggerMs(300)).toBeLessThan(dealStaggerMs(150));
+    expect(dealStaggerMs(1508)).toBeLessThan(dealStaggerMs(300));
+    for (const count of [150, 300, 1508, 2050]) {
+      expect(dealDurationMs(count)).toBeLessThanOrEqual(5000);
+    }
   });
 });
 
@@ -91,6 +139,20 @@ describe("gameReducer", () => {
     const ready = newGame(board);
     expect(canFlip(ready, 0)).toBe(false);
     expect(flip(ready, 0)).toBe(ready);
+  });
+
+  it("deals the cards on Start, keeping them unflippable and the clock stopped until dealt", () => {
+    const board = dealBoard([pokemon(1), pokemon(2)], { cols: 2, rows: 2 }, upright);
+    const dealing = gameReducer(newGame(board), { type: "start" });
+    expect(dealing.phase).toBe("dealing");
+    expect(dealing.startedAt).toBeNull();
+    expect(canFlip(dealing, 0)).toBe(false);
+    expect(gameReducer(dealing, { type: "setPlayers", players: 2 })).toBe(dealing);
+
+    const playing = gameReducer(dealing, { type: "dealt", now: 1000 });
+    expect(playing.phase).toBe("playing");
+    expect(playing.startedAt).toBe(1000);
+    expect(gameReducer(playing, { type: "dealt", now: 5000 })).toBe(playing);
   });
 
   it("records when the timer started", () => {
@@ -169,7 +231,7 @@ describe("two-player game", () => {
     const ready = gameReducer(newGame(board), { type: "setPlayers", players: 2 });
     expect(ready.players).toBe(2);
     expect(ready.scores).toEqual([0, 0]);
-    const playing = gameReducer(ready, { type: "start", now: 1 });
+    const playing = gameReducer(gameReducer(ready, { type: "start" }), { type: "dealt", now: 1 });
     expect(gameReducer(playing, { type: "setPlayers", players: 1 })).toBe(playing);
   });
 
