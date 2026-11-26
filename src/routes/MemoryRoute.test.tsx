@@ -206,13 +206,33 @@ describe("MemoryRoute", () => {
   it("re-deals at the new size when the slider is released, remembering the size", async () => {
     setBoardArea(760, 400);
     await renderDealt();
-    const before = cards().length;
     const slider = screen.getByRole("slider", { name: "Card size" });
+    expect(slider.getAttribute("aria-valuetext")).toBe("10 cards");
     await act(async () => {
-      fireEvent.change(slider, { target: { value: 64 } });
+      fireEvent.change(slider, { target: { value: 0 } });
     });
-    await waitFor(() => expect(cards().length).toBeGreaterThan(before));
+    await waitFor(() => expect(cards().length).toBeGreaterThan(10));
+    expect(slider.getAttribute("aria-valuetext")).toBe(`${cards().length} cards`);
     expect(localStorage.getItem("slopdex.memory.cardSize")).toBe("64");
+  });
+
+  it("steps the slider only between sizes that deal a different Board", async () => {
+    setBoardArea(760, 400);
+    await renderDealt();
+    const slider = screen.getByRole("slider", { name: "Card size" });
+    const counts: string[] = [];
+    for (
+      let step = Number(slider.getAttribute("min"));
+      step <= Number(slider.getAttribute("max"));
+      step++
+    ) {
+      await act(async () => {
+        fireEvent.change(slider, { target: { value: step } });
+      });
+      counts.push(slider.getAttribute("aria-valuetext") ?? "");
+    }
+    expect(counts.length).toBeGreaterThan(2);
+    expect(new Set(counts).size).toBe(counts.length);
   });
 
   it("rearranges the same cards when the device turns, without a new Board", async () => {

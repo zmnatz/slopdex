@@ -2,9 +2,7 @@ import type { PokemonData } from "./types";
 
 export const MIN_CARD_SIZE = 64;
 export const MAX_CARD_SIZE = 200;
-export const CARD_SIZE_STEP = 4;
 export const CARD_GAP = 8;
-export const MAX_PAIRS = 30;
 export const MISMATCH_DELAY_MS = 1000;
 /** Gap between one card leaving the deck and the next, when dealing. */
 export const DEAL_STAGGER_MS = 40;
@@ -102,27 +100,37 @@ export function cardSideFor(area: Area, grid: Grid): number {
 }
 
 /**
- * The grid a Board is dealt on: as many `cardSize` cards as fit in `area`, then
- * trimmed to at most MAX_PAIRS and to an even card count. Each trim removes the
- * row or column that leaves the larger cards, so the Board keeps filling `area`.
+ * The grid a Board is dealt on: as many `cardSize` cards as fit in `area`. An
+ * odd count loses the row or column that leaves the larger cards, so the Board
+ * keeps filling `area` and every card has a partner.
  */
 export function fitGrid(area: Area, cardSize: number): Grid {
   const fit = (space: number) =>
     Math.max(MIN_GRID_SIDE, Math.floor((space + CARD_GAP) / (cardSize + CARD_GAP)));
-  let grid: Grid = { cols: fit(area.width), rows: fit(area.height) };
+  const grid: Grid = { cols: fit(area.width), rows: fit(area.height) };
+  if ((grid.cols * grid.rows) % 2 === 0) return grid;
 
-  const isDealable = ({ cols, rows }: Grid) =>
-    cols * rows <= MAX_PAIRS * 2 && (cols * rows) % 2 === 0;
+  // An odd count means both sides are odd, and so at least 3: either can lose one.
+  const fewerCols: Grid = { cols: grid.cols - 1, rows: grid.rows };
+  const fewerRows: Grid = { cols: grid.cols, rows: grid.rows - 1 };
+  return cardSideFor(area, fewerCols) >= cardSideFor(area, fewerRows) ? fewerCols : fewerRows;
+}
 
-  while (!isDealable(grid)) {
-    const fewerCols: Grid = { cols: grid.cols - 1, rows: grid.rows };
-    const fewerRows: Grid = { cols: grid.cols, rows: grid.rows - 1 };
-    if (fewerCols.cols < MIN_GRID_SIDE) grid = fewerRows;
-    else if (fewerRows.rows < MIN_GRID_SIDE) grid = fewerCols;
-    else
-      grid = cardSideFor(area, fewerCols) >= cardSideFor(area, fewerRows) ? fewerCols : fewerRows;
+/**
+ * The card sizes a player can pick in `area`: the smallest size that deals each
+ * different grid, smallest first. Sizes in between would deal the same Board.
+ */
+export function cardSizeSteps(area: Area): number[] {
+  const steps: number[] = [];
+  const seen = new Set<string>();
+  for (let size = MIN_CARD_SIZE; size <= MAX_CARD_SIZE; size++) {
+    const { cols, rows } = fitGrid(area, size);
+    const key = `${cols}×${rows}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    steps.push(size);
   }
-  return grid;
+  return steps;
 }
 
 /** Deal a shuffled Board holding each Pokémon exactly twice. */

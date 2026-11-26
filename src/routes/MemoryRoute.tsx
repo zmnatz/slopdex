@@ -8,7 +8,7 @@ import Slider from "@mui/material/Slider";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { MemoryCard } from "../components/MemoryCard";
 import { readScreenAngle, useMemoryGame } from "../hooks/useMemoryGame";
 import { LinkedIconButton } from "../utils/linkedComponents";
@@ -16,16 +16,16 @@ import {
   type Area,
   arrangeCards,
   CARD_GAP,
-  CARD_SIZE_STEP,
+  cardSizeSteps,
   cardSideFor,
   DEAL_FLIGHT_MS,
   DEAL_STAGGER_MS,
   defaultCardSize,
+  fitGrid,
   formatElapsed,
   type GameState,
   type PlayerCount,
   MAX_CARD_SIZE,
-  MAX_PAIRS,
   MIN_CARD_SIZE,
   quarterTurns,
   winners,
@@ -70,8 +70,6 @@ function Scoreboard({ game }: { game: GameState }) {
   );
 }
 
-const MAX_DEALT = MAX_PAIRS * 2;
-
 /**
  * One spot on the Board. Before Start the spot shows only its outline, so the
  * card size can be previewed, and its card waits in the deck on the top-left
@@ -79,6 +77,7 @@ const MAX_DEALT = MAX_PAIRS * 2;
  */
 function DealtSlot({
   position,
+  cardCount,
   cols,
   side,
   inDeck,
@@ -87,6 +86,7 @@ function DealtSlot({
 }: {
   /** Index in on-screen reading order, which is also the order cards are dealt. */
   position: number;
+  cardCount: number;
   cols: number;
   side: number;
   inDeck: boolean;
@@ -115,7 +115,7 @@ function DealtSlot({
           position: "relative",
           // In the deck, the next card to be dealt is on top. As each card leaves the
           // deck it jumps above every card dealt before it, so it flies over them.
-          zIndex: inDeck ? MAX_DEALT - position : MAX_DEALT + position + 1,
+          zIndex: inDeck ? cardCount - position : cardCount + position + 1,
           transform: inDeck ? `translate(${x}px, ${y}px)` : "none",
           // Kept on once dealt, so a card still in flight when play begins lands smoothly.
           transition: !inDeck
@@ -245,6 +245,18 @@ export function MemoryRoute() {
   );
   const screenAngle = useSyncExternalStore(subscribeToScreenAngle, readScreenAngle);
 
+  // Each slider step is a card size that deals a different grid in this area.
+  const sizeSteps = useMemo(() => (area ? cardSizeSteps(area) : []), [area]);
+  const stepIndex = Math.max(
+    0,
+    sizeSteps.findLastIndex((size) => size <= cardSize),
+  );
+  const cardCountAt = (step: number) => {
+    if (!area || sizeSteps.length === 0) return "";
+    const { cols, rows } = fitGrid(area, sizeSteps[step]);
+    return `${cols * rows} cards`;
+  };
+
   const commitCardSize = (size: number) => {
     if (size === committedSize.current) return;
     committedSize.current = size;
@@ -324,13 +336,15 @@ export function MemoryRoute() {
           <Slider
             aria-label="Card size"
             size="small"
-            min={MIN_CARD_SIZE}
-            max={MAX_CARD_SIZE}
-            step={CARD_SIZE_STEP}
-            value={cardSize}
-            disabled={locked}
-            onChange={(_, value) => setCardSize(value as number)}
-            onChangeCommitted={(_, value) => commitCardSize(value as number)}
+            min={0}
+            max={Math.max(0, sizeSteps.length - 1)}
+            step={1}
+            marks
+            value={stepIndex}
+            disabled={locked || sizeSteps.length < 2}
+            getAriaValueText={cardCountAt}
+            onChange={(_, step) => setCardSize(sizeSteps[step as number])}
+            onChangeCommitted={(_, step) => commitCardSize(sizeSteps[step as number])}
             sx={{
               maxWidth: 320,
               color: "inherit",
@@ -373,6 +387,7 @@ export function MemoryRoute() {
                   <DealtSlot
                     key={card.key}
                     position={position}
+                    cardCount={board.cards.length}
                     cols={arrangement.cols}
                     side={side}
                     inDeck={game.phase === "ready"}

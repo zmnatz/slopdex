@@ -3,11 +3,11 @@ import {
   arrangeCards,
   canFlip,
   cardSideFor,
+  cardSizeSteps,
   dealBoard,
   fitGrid,
   formatElapsed,
   gameReducer,
-  MAX_PAIRS,
   newGame,
   quarterTurns,
   type GameState,
@@ -59,10 +59,9 @@ describe("fitGrid", () => {
     }
   });
 
-  it("caps the Board and keeps it shaped like the area", () => {
-    const { cols, rows } = fitGrid({ width: 3840, height: 2100 }, 64);
-    expect(cols * rows).toBeLessThanOrEqual(MAX_PAIRS * 2);
-    expect(cols).toBeGreaterThan(rows);
+  it("fills even a very large area, with no limit on the number of cards", () => {
+    // 53×29 small cards fit; that's odd, and dropping a column leaves cards as large.
+    expect(fitGrid({ width: 3840, height: 2100 }, 64)).toEqual({ cols: 52, rows: 29 });
   });
 
   it("deals at least a 2×2 Board even when the card size exceeds the area", () => {
@@ -74,6 +73,26 @@ describe("fitGrid", () => {
     const grid = fitGrid(area, 90);
     expect(grid).toEqual({ cols: 6, rows: 3 });
     expect(cardSideFor(area, grid)).toBeGreaterThanOrEqual(90);
+  });
+});
+
+describe("cardSizeSteps", () => {
+  it("offers the smallest card size that deals each different grid, smallest first", () => {
+    // 300×300: 4×4 up to 69px, then 3×3 trimmed to 2×3, then 2×2 from 95px.
+    expect(cardSizeSteps({ width: 300, height: 300 })).toEqual([64, 70, 95]);
+  });
+
+  it("never offers two sizes that deal the same grid", () => {
+    for (const area of [
+      { width: 375, height: 600 },
+      { width: 1280, height: 720 },
+      { width: 1920, height: 1080 },
+      { width: 3840, height: 2100 },
+    ]) {
+      const grids = cardSizeSteps(area).map((size) => JSON.stringify(fitGrid(area, size)));
+      expect(new Set(grids).size).toBe(grids.length);
+      expect(grids.length).toBeGreaterThan(1);
+    }
   });
 });
 
