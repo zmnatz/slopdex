@@ -18,11 +18,14 @@ import {
   CARD_GAP,
   CARD_SIZE_STEP,
   cardSideFor,
+  DEAL_FLIGHT_MS,
+  DEAL_STAGGER_MS,
   defaultCardSize,
   formatElapsed,
   type GameState,
   type PlayerCount,
   MAX_CARD_SIZE,
+  MAX_PAIRS,
   MIN_CARD_SIZE,
   quarterTurns,
   winners,
@@ -63,6 +66,66 @@ function Scoreboard({ game }: { game: GameState }) {
           </Box>
         );
       })}
+    </Box>
+  );
+}
+
+const MAX_DEALT = MAX_PAIRS * 2;
+
+/**
+ * One spot on the Board. Before Start the spot shows only its outline, so the
+ * card size can be previewed, and its card waits in the deck on the top-left
+ * spot. On Start each card flies from the deck to its spot in reading order.
+ */
+function DealtSlot({
+  position,
+  cols,
+  side,
+  inDeck,
+  dealing,
+  children,
+}: {
+  /** Index in on-screen reading order, which is also the order cards are dealt. */
+  position: number;
+  cols: number;
+  side: number;
+  inDeck: boolean;
+  dealing: boolean;
+  children: React.ReactNode;
+}) {
+  const pitch = side + CARD_GAP;
+  const x = -(position % cols) * pitch;
+  const y = -Math.floor(position / cols) * pitch;
+  const delay = `${position * DEAL_STAGGER_MS}ms`;
+  return (
+    <Box sx={{ position: "relative" }}>
+      {(inDeck || dealing) && (
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: `${Math.round(side * 0.12)}px`,
+            border: "2px dashed rgba(0, 0, 0, 0.25)",
+          }}
+        />
+      )}
+      <Box
+        sx={{
+          position: "relative",
+          // In the deck, the next card to be dealt is on top. As each card leaves the
+          // deck it jumps above every card dealt before it, so it flies over them.
+          zIndex: inDeck ? MAX_DEALT - position : MAX_DEALT + position + 1,
+          transform: inDeck ? `translate(${x}px, ${y}px)` : "none",
+          // Kept on once dealt, so a card still in flight when play begins lands smoothly.
+          transition: !inDeck
+            ? `transform ${DEAL_FLIGHT_MS}ms cubic-bezier(0.2, 0.7, 0.3, 1) ${delay}, z-index 0ms ${delay}`
+            : "none",
+          "@media (prefers-reduced-motion: reduce)": { transform: "none", transition: "none" },
+        }}
+      >
+        {children}
+      </Box>
     </Box>
   );
 }
@@ -294,33 +357,44 @@ export function MemoryRoute() {
           {board && arrangement && (
             <Box
               data-testid="memory-board"
+              aria-busy={game.phase === "dealing"}
               sx={{
+                // Keeps the deck's z-indexes inside the Board, under the Start button.
+                isolation: "isolate",
                 display: "grid",
                 gridTemplateColumns: `repeat(${arrangement.cols}, ${side}px)`,
                 gap: `${CARD_GAP}px`,
               }}
             >
-              {arrangement.order.map((cardIndex) => {
+              {arrangement.order.map((cardIndex, position) => {
                 const card = board.cards[cardIndex];
                 const matched = game.matchedIds.includes(card.pokemon.id);
                 return (
-                  <MemoryCard
+                  <DealtSlot
                     key={card.key}
-                    index={cardIndex}
-                    position={cardIndex + 1}
-                    name={card.pokemon.name}
-                    artworkSrc={card.pokemon.artworkSrc}
+                    position={position}
+                    cols={arrangement.cols}
                     side={side}
-                    matched={matched}
-                    matchColor={
-                      game.players === 2
-                        ? PLAYER_COLORS[game.matchedBy[card.pokemon.id] ?? 0]
-                        : SOLO_MATCH_COLOR
-                    }
-                    faceUp={matched || game.flipped.includes(cardIndex)}
-                    disabled={game.phase !== "playing" || matched}
-                    onFlip={flip}
-                  />
+                    inDeck={game.phase === "ready"}
+                    dealing={game.phase === "dealing"}
+                  >
+                    <MemoryCard
+                      index={cardIndex}
+                      position={cardIndex + 1}
+                      name={card.pokemon.name}
+                      artworkSrc={card.pokemon.artworkSrc}
+                      side={side}
+                      matched={matched}
+                      matchColor={
+                        game.players === 2
+                          ? PLAYER_COLORS[game.matchedBy[card.pokemon.id] ?? 0]
+                          : SOLO_MATCH_COLOR
+                      }
+                      faceUp={matched || game.flipped.includes(cardIndex)}
+                      disabled={game.phase !== "playing" || matched}
+                      onFlip={flip}
+                    />
+                  </DealtSlot>
                 );
               })}
             </Box>

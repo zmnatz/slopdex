@@ -1,4 +1,4 @@
-vp fmt --check
-vp lint
-vp run build
-vp test run
+bun --bun vp fmt --check
+bun --bun vp lint
+bun --bun vp run build
+bun --bun vp test run

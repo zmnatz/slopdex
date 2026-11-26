@@ -23,7 +23,10 @@ export const StartedAndFlipped: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole("button", { name: "Start" }, { timeout: 10000 }));
-    await userEvent.click(canvas.getAllByTestId("memory-card")[0]);
+    const firstCard = canvas.getAllByTestId("memory-card")[0];
+    // Cards can't be flipped until the deal animation finishes.
+    await waitFor(() => expect(firstCard).toBeEnabled(), { timeout: 5000 });
+    await userEvent.click(firstCard);
     await waitFor(() =>
       expect(canvas.getAllByRole("button", { name: /charizard|bulbasaur/ })).toBeTruthy(),
     );

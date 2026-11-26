@@ -40,11 +40,15 @@ A round-based activity in the app. Each **Round** shows a random Pokémon's full
 
 ### Memory Match
 
-A timed matching activity in the app, separate from **Who's That Pokémon?**. The player flips cards two at a time to find every **Pair** on a **Board**. There is no time limit and no way to lose: play continues until every Pair is matched. The elapsed time, from pressing Start to the final match, is the only score, and it is not kept after the Board ends. Cards show only a Pokémon's artwork, never its name or types.
+A timed matching activity in the app, separate from **Who's That Pokémon?**. The player flips cards two at a time to find every **Pair** on a **Board**. There is no time limit and no way to lose: play continues until every Pair is matched. The elapsed time, from the end of the **Deal** to the final match, is the only score, and it is not kept after the Board ends. Cards show only a Pokémon's artwork, never its name or types.
 
 ### Board
 
 In **Memory Match**, one deal of shuffled face-down cards. Each Pokémon on a Board appears exactly twice, as one **Pair**. Its Pokémon are drawn at random from all 1025, unaffected by the sidebar's filters. Playing again deals a new Board.
+
+### Deal
+
+In **Memory Match**, the animation that follows pressing Start. Before Start, a **Board** shows only an outline of each card's spot, previewing the card size, while its cards wait face down in a deck on the top-left spot. On Start they fly one at a time from the deck, in reading order, to their spots. No card can be flipped and the timer stays at 0:00 until the last card lands. Under reduced motion the cards start in their spots and play begins at once. Not to be confused with dealing a Board, which means drawing and shuffling its cards.
 
 ### Pair
 

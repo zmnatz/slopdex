@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { renderWithRouter } from "../test-utils/renderWithRouter";
-import { MISMATCH_DELAY_MS } from "../utils/memoryGame";
+import { dealDurationMs, MISMATCH_DELAY_MS } from "../utils/memoryGame";
 import { MemoryRoute } from "./MemoryRoute";
 
 const { getPokemon, getArtworkBase64, audioInstances } = vi.hoisted(() => ({
@@ -67,6 +67,14 @@ async function renderDealt() {
   return screen.findByRole("button", { name: "Start" }, { timeout: 5000 });
 }
 
+/** Press Start and wait for the deal to finish, so the cards can be flipped. */
+async function startAndDeal(startButton: HTMLElement) {
+  fireEvent.click(startButton);
+  await waitFor(() => expect((cards()[0].element as HTMLButtonElement).disabled).toBe(false), {
+    timeout: dealDurationMs(cards().length) + 500,
+  });
+}
+
 beforeEach(() => {
   localStorage.clear();
   audioInstances.length = 0;
@@ -91,7 +99,7 @@ describe("MemoryRoute", () => {
   });
 
   it("shows only artwork on a flipped card, not a name or types", async () => {
-    fireEvent.click(await renderDealt());
+    await startAndDeal(await renderDealt());
     fireEvent.click(cards()[0].element);
     const card = cards()[0].element;
     expect(card.textContent).toBe("");
@@ -105,6 +113,22 @@ describe("MemoryRoute", () => {
     expect(audioInstances).toHaveLength(0);
   });
 
+  it("deals the cards on Start, holding play and the timer until the last card lands", async () => {
+    fireEvent.click(await renderDealt());
+    expect(screen.queryByRole("button", { name: "Start" })).toBeNull();
+    expect(screen.getByTestId("memory-board").getAttribute("aria-busy")).toBe("true");
+    fireEvent.click(cards()[0].element);
+    expect(screen.getAllByLabelText(/face down/)).toHaveLength(4);
+    expect(audioInstances).toHaveLength(0);
+
+    await waitFor(
+      () => expect(screen.getByTestId("memory-board").getAttribute("aria-busy")).toBe("false"),
+      { timeout: dealDurationMs(4) + 500 },
+    );
+    fireEvent.click(cards()[0].element);
+    expect(screen.getAllByLabelText(/face down/)).toHaveLength(3);
+  });
+
   it("locks the slider on Start", async () => {
     const startButton = await renderDealt();
     const slider = screen.getByRole("slider", { name: "Card size" }) as HTMLInputElement;
@@ -114,7 +138,7 @@ describe("MemoryRoute", () => {
   });
 
   it("keeps a matched Pair face up", async () => {
-    fireEvent.click(await renderDealt());
+    await startAndDeal(await renderDealt());
     const { first, partner } = pairedCards();
     fireEvent.click(first.element);
     fireEvent.click(partner.element);
@@ -123,7 +147,7 @@ describe("MemoryRoute", () => {
   });
 
   it("flips a mismatch back after the delay", async () => {
-    fireEvent.click(await renderDealt());
+    await startAndDeal(await renderDealt());
     const { first, other } = pairedCards();
     fireEvent.click(first.element);
     fireEvent.click(other.element);
@@ -134,7 +158,7 @@ describe("MemoryRoute", () => {
   });
 
   it("plays a cry on each flip at the shared volume, cutting off the previous one", async () => {
-    fireEvent.click(await renderDealt());
+    await startAndDeal(await renderDealt());
     const { first, partner } = pairedCards();
     fireEvent.click(first.element);
     expect(audioInstances).toHaveLength(1);
@@ -145,7 +169,7 @@ describe("MemoryRoute", () => {
   });
 
   it("finishes after the last match, then Play Again deals a new Board and unlocks the slider", async () => {
-    fireEvent.click(await renderDealt());
+    await startAndDeal(await renderDealt());
     const dealtBefore = cards();
     for (const art of new Set(dealtBefore.map((c) => c.art))) {
       for (const card of dealtBefore.filter((c) => c.art === art)) fireEvent.click(card.element);
@@ -206,8 +230,7 @@ describe("MemoryRoute", () => {
       },
     });
 
-    const startButton = await renderDealt();
-    fireEvent.click(startButton);
+    await startAndDeal(await renderDealt());
     const before = cards().map((c) => c.art);
     const board = screen.getByTestId("memory-board");
     const columns = () => getComputedStyle(board).gridTemplateColumns.match(/repeat\((\d+)/)?.[1];
@@ -232,7 +255,7 @@ describe("MemoryRoute", () => {
     const startButton = await renderDealt();
     fireEvent.click(screen.getByRole("button", { name: "2 players" }));
     expect(screen.getByLabelText("Player 1 score").textContent).toBe("0");
-    fireEvent.click(startButton);
+    await startAndDeal(startButton);
 
     const active = () =>
       within(screen.getByTestId("scoreboard"))

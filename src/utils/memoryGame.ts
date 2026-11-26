@@ -6,6 +6,15 @@ export const CARD_SIZE_STEP = 4;
 export const CARD_GAP = 8;
 export const MAX_PAIRS = 30;
 export const MISMATCH_DELAY_MS = 1000;
+/** Gap between one card leaving the deck and the next, when dealing. */
+export const DEAL_STAGGER_MS = 40;
+/** How long one card takes to fly from the deck to its spot. */
+export const DEAL_FLIGHT_MS = 350;
+
+/** How long dealing `cardCount` cards takes, from Start until the last card lands. */
+export function dealDurationMs(cardCount: number): number {
+  return cardCount === 0 ? 0 : (cardCount - 1) * DEAL_STAGGER_MS + DEAL_FLIGHT_MS;
+}
 
 const MIN_GRID_SIDE = 2;
 
@@ -46,7 +55,8 @@ export interface Board extends Grid {
 
 export type PlayerCount = 1 | 2;
 
-export type Phase = "ready" | "playing" | "finished";
+/** `dealing`: Start was pressed and the cards are flying from the deck to the Board. */
+export type Phase = "ready" | "dealing" | "playing" | "finished";
 
 export interface GameState {
   board: Board;
@@ -67,7 +77,8 @@ export interface GameState {
 }
 
 export type GameAction =
-  | { type: "start"; now: number }
+  | { type: "start" }
+  | { type: "dealt"; now: number }
   | { type: "flip"; index: number; now: number }
   | { type: "settleMismatch" }
   | { type: "setPlayers"; players: PlayerCount };
@@ -161,6 +172,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case "start":
       if (state.phase !== "ready") return state;
+      return { ...state, phase: "dealing" };
+
+    case "dealt":
+      if (state.phase !== "dealing") return state;
       return { ...state, phase: "playing", startedAt: action.now };
 
     case "flip": {

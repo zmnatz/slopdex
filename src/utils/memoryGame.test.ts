@@ -32,7 +32,8 @@ function gameWith(ids: number[], players: PlayerCount = 1): GameState {
     { key: `${id}-a`, pokemon: pokemon(id) },
     { key: `${id}-b`, pokemon: pokemon(id) },
   ]);
-  return gameReducer(newGame(board, players), { type: "start", now: 1000 });
+  const dealing = gameReducer(newGame(board, players), { type: "start" });
+  return gameReducer(dealing, { type: "dealt", now: 1000 });
 }
 const flip = (state: GameState, index: number, now = 2000) =>
   gameReducer(state, { type: "flip", index, now });
@@ -91,6 +92,20 @@ describe("gameReducer", () => {
     const ready = newGame(board);
     expect(canFlip(ready, 0)).toBe(false);
     expect(flip(ready, 0)).toBe(ready);
+  });
+
+  it("deals the cards on Start, keeping them unflippable and the clock stopped until dealt", () => {
+    const board = dealBoard([pokemon(1), pokemon(2)], { cols: 2, rows: 2 }, upright);
+    const dealing = gameReducer(newGame(board), { type: "start" });
+    expect(dealing.phase).toBe("dealing");
+    expect(dealing.startedAt).toBeNull();
+    expect(canFlip(dealing, 0)).toBe(false);
+    expect(gameReducer(dealing, { type: "setPlayers", players: 2 })).toBe(dealing);
+
+    const playing = gameReducer(dealing, { type: "dealt", now: 1000 });
+    expect(playing.phase).toBe("playing");
+    expect(playing.startedAt).toBe(1000);
+    expect(gameReducer(playing, { type: "dealt", now: 5000 })).toBe(playing);
   });
 
   it("records when the timer started", () => {
@@ -169,7 +184,7 @@ describe("two-player game", () => {
     const ready = gameReducer(newGame(board), { type: "setPlayers", players: 2 });
     expect(ready.players).toBe(2);
     expect(ready.scores).toEqual([0, 0]);
-    const playing = gameReducer(ready, { type: "start", now: 1 });
+    const playing = gameReducer(gameReducer(ready, { type: "start" }), { type: "dealt", now: 1 });
     expect(gameReducer(playing, { type: "setPlayers", players: 1 })).toBe(playing);
   });
 
