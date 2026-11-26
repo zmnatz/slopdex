@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { renderWithRouter } from "../test-utils/renderWithRouter";
-import { dealDurationMs, MISMATCH_DELAY_MS } from "../utils/memoryGame";
+import { dealDurationMs, MISMATCH_DELAY_MS, SHOWDOWN_MS } from "../utils/memoryGame";
 import { MemoryRoute } from "./MemoryRoute";
 
 const { getPokemon, getArtworkBase64, audioInstances } = vi.hoisted(() => ({
@@ -302,8 +302,22 @@ describe("MemoryRoute", () => {
     for (const art of new Set(all.map((c) => c.art))) {
       for (const card of all.filter((c) => c.art === art)) fireEvent.click(card.element);
     }
-    const status = await screen.findByRole("status");
+
+    // The teams fight first: Player 2's two Pokémon against Player 1's none.
+    const winningTeam = screen.getByRole("group", { name: "Player 2's team" });
+    expect(
+      within(winningTeam)
+        .getAllByRole("img")
+        .map((img) => img.getAttribute("alt")),
+    ).toEqual(
+      expect.arrayContaining([expect.stringMatching(/^mon-/), expect.stringMatching(/^mon-/)]),
+    );
+    expect(within(winningTeam).getAllByRole("img")).toHaveLength(2);
+    expect(screen.queryByRole("status")).toBeNull();
+
+    // Then the winner is declared, within a few seconds.
+    const status = await screen.findByRole("status", undefined, { timeout: SHOWDOWN_MS + 1000 });
     expect(status.textContent).toMatch(/Player 2 wins!/);
     expect(status.textContent).toMatch(/Final score: 0 – 2/);
-  });
+  }, 10000);
 });

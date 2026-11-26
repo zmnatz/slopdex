@@ -3,6 +3,8 @@ import type { PokemonData } from "./types";
 export const MIN_CARD_SIZE = 64;
 export const CARD_GAP = 8;
 export const MISMATCH_DELAY_MS = 1000;
+/** How long a 2-player Showdown runs, from the final match until the winner is declared. */
+export const SHOWDOWN_MS = 3000;
 /** Gap between one card leaving the deck and the next, when dealing a small Board. */
 const DEAL_STAGGER_MS = 40;
 /** How long one card takes to fly from the deck to its spot. */
@@ -181,6 +183,17 @@ export function newGame(board: Board, players: PlayerCount = 1): GameState {
 export function winners(state: GameState): number[] {
   const best = Math.max(...state.scores);
   return state.scores.flatMap((score, player) => (score === best ? [player] : []));
+}
+
+/** Each player's team: the Pokémon of the Pairs they matched, in the order matched. */
+export function teams(state: GameState): MemoryPokemon[][] {
+  const byId = new Map(state.board.cards.map((card) => [card.pokemon.id, card.pokemon]));
+  const result = state.scores.map((): MemoryPokemon[] => []);
+  for (const id of state.matchedIds) {
+    const pokemon = byId.get(id);
+    if (pokemon) result[state.matchedBy[id] ?? 0].push(pokemon);
+  }
+  return result;
 }
 
 export function canFlip(state: GameState, index: number): boolean {
